@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64</Platforms>
+    <AssemblyName>FH6ItalianRarities.Core</AssemblyName>
+    <RootNamespace>FH6ItalianRarities</RootNamespace>
+    <Version>1.0.4</Version>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+</Project>

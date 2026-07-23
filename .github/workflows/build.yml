@@ -1,0 +1,34 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore .\FH6ItalianRarities.sln
+
+      - name: Build
+        run: dotnet build .\src\FH6ItalianRarities\FH6ItalianRarities.csproj -c Release -r win-x64 --no-restore -p:TreatWarningsAsErrors=true
+
+      - name: Offline self-test
+        shell: pwsh
+        run: |
+          dotnet .\src\FH6ItalianRarities\bin\Release\net8.0-windows\win-x64\FH6ItalianRarities.dll --self-test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

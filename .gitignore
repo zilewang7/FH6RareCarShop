@@ -1,0 +1,43 @@
+# .NET build output
+**/bin/
+**/obj/
+artifacts/
+release/
+
+# IDE and user settings
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Local diagnostics and reverse-engineering material
+analysis/
+captures/
+sessions/
+*.log
+*.dmp
+*.mem
+*.raw
+
+# Published binaries belong in GitHub Releases, not Git history
+*.exe
+*.dll
+*.pdb
+*.zip
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+*.snk
+
+# OS metadata
+Thumbs.db
+Desktop.ini
+.DS_Store

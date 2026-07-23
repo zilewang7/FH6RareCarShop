@@ -1,0 +1,591 @@
+<Window x:Class="FH6ItalianRarities.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="FH6 意大利奇珍库存控制器"
+        Icon="Assets/FH6ItalianRarities.ico"
+        Width="1360"
+        Height="880"
+        MinWidth="1080"
+        MinHeight="720"
+        Background="{StaticResource CanvasBrush}"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Style x:Key="SlotPanelStyle" TargetType="Border">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+
+        <DataTemplate x:Key="CarRowTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding OriginalName}"
+                               FontSize="13"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding ChineseName}"
+                               Margin="0,3,0,0"
+                               FontSize="11"
+                               Foreground="{StaticResource MutedBrush}"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
+                    <Border Padding="6,2" CornerRadius="3" Background="#FBE9EB" Margin="0,0,0,3">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsLimited}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="限定" Foreground="{StaticResource LimitedBrush}" FontSize="10" FontWeight="SemiBold" />
+                    </Border>
+                    <Border Padding="6,2" CornerRadius="3" Background="#FFF1CC">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRecommended}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="推荐" Foreground="{StaticResource RecommendBrush}" FontSize="10" FontWeight="SemiBold" />
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="SelectionDetailTemplate">
+            <Border Background="#F7F8FA"
+                    BorderBrush="{StaticResource LineBrush}"
+                    BorderThickness="0,1,0,1"
+                    Padding="12,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding IdText}" FontSize="10" Foreground="{StaticResource MutedBrush}" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding ReferencePrice}"
+                                   FontSize="10"
+                                   Foreground="{StaticResource RecommendBrush}"
+                                   FontWeight="SemiBold" />
+                    </Grid>
+                    <TextBlock Grid.Row="1"
+                               Text="{Binding DetailText}"
+                               Margin="0,5,0,0"
+                               FontSize="11"
+                               Foreground="{StaticResource InkBrush}"
+                               TextWrapping="Wrap"
+                               TextTrimming="CharacterEllipsis" />
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="72" />
+            <RowDefinition Height="52" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="32" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#202329">
+            <Grid Margin="24,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="FH6 意大利奇珍"
+                               Foreground="White"
+                               FontSize="24"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="库存控制器  ·  42 辆已验证车辆"
+                               Margin="1,3,0,0"
+                               Foreground="#BFC5CD"
+                               FontSize="12" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource IconButton}"
+                            Click="OpenLogs_Click"
+                            ToolTip="打开诊断日志目录"
+                            Content="&#xE8B7;" />
+                    <Button Margin="8,0,0,0"
+                            Style="{StaticResource SecondaryButton}"
+                            Click="Inspect_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       Text="&#xE72C;"
+                                       Margin="0,0,7,0" />
+                            <TextBlock Text="只读扫描" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1"
+                Background="#FFFFFF"
+                BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="0,0,0,1">
+            <Grid Margin="24,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Ellipse x:Name="ProcessStatusDot"
+                         Width="9"
+                         Height="9"
+                         Fill="#9AA1AB"
+                         VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="ProcessStatusText"
+                               Text="等待 Forza Horizon 6"
+                               Foreground="{StaticResource InkBrush}"
+                               FontWeight="SemiBold" />
+                    <TextBlock x:Name="ProcessDetailText"
+                               Text="游戏关闭时可浏览车辆目录"
+                               Foreground="{StaticResource MutedBrush}"
+                               FontSize="11" />
+                </StackPanel>
+                <TextBlock Grid.Column="2"
+                           x:Name="CompatibilitySummaryText"
+                           Text="尚未执行兼容性扫描"
+                           Foreground="{StaticResource MutedBrush}"
+                           VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="2"
+                    x:Name="WorkspaceTabs"
+                    Background="Transparent"
+                    BorderThickness="0">
+            <TabItem Header="车辆选择">
+                <Grid Margin="18,12,18,16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="52" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="360" Height="36">
+                            <Border Background="White"
+                                    BorderBrush="{StaticResource LineBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="36" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="&#xE721;"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           Foreground="{StaticResource MutedBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1"
+                                         x:Name="SearchBox"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         VerticalContentAlignment="Center"
+                                         TextChanged="SearchBox_TextChanged" />
+                                <TextBlock Grid.Column="1"
+                                           x:Name="SearchPlaceholder"
+                                           Text="搜索原名、译名、品牌或 ID"
+                                           Foreground="#9299A3"
+                                           IsHitTestVisible="False"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="2"
+                                        x:Name="ClearSearchButton"
+                                        Style="{StaticResource IconButton}"
+                                        Width="30"
+                                        Height="30"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        Content="&#xE711;"
+                                        ToolTip="清除搜索"
+                                        Visibility="Collapsed"
+                                        Click="ClearSearch_Click" />
+                            </Grid>
+                        </Grid>
+
+                        <ToggleButton Grid.Column="1"
+                                      x:Name="LimitedFilter"
+                                      Margin="10,0,0,0"
+                                      Style="{StaticResource FilterToggle}"
+                                      Content="抽奖限定"
+                                      Checked="Filter_Changed"
+                                      Unchecked="Filter_Changed" />
+                        <ToggleButton Grid.Column="2"
+                                      x:Name="RecommendedFilter"
+                                      Margin="8,0,0,0"
+                                      Style="{StaticResource FilterToggle}"
+                                      Content="特别推荐"
+                                      Checked="Filter_Changed"
+                                      Unchecked="Filter_Changed" />
+                        <TextBlock Grid.Column="3"
+                                   x:Name="VisibleCountText"
+                                   Margin="14,0,0,0"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   VerticalAlignment="Center" />
+                        <Button Grid.Column="4"
+                                Style="{StaticResource CommandButton}"
+                                Click="ApplyAll_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           Text="&#xE74E;"
+                                           Margin="0,0,7,0" />
+                                <TextBlock Text="应用三个展位" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Style="{StaticResource SlotPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="68" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="84" />
+                                    <RowDefinition Height="54" />
+                                </Grid.RowDefinitions>
+                                <Grid Margin="14,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="展位 1" FontSize="17" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="Slot1CurrentText"
+                                                   Text="当前：等待扫描"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Margin="0,3,0,0"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="14 辆" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                </Grid>
+                                <ListBox Grid.Row="1"
+                                         x:Name="Slot1List"
+                                         Tag="1"
+                                         ItemsSource="{Binding Slot1View}"
+                                         SelectionChanged="SlotList_SelectionChanged"
+                                         Style="{StaticResource CarListBox}"
+                                         ItemContainerStyle="{StaticResource CarListItem}"
+                                         ItemTemplate="{StaticResource CarRowTemplate}" />
+                                <ContentControl Grid.Row="2"
+                                                Content="{Binding SelectedSlot1}"
+                                                ContentTemplate="{StaticResource SelectionDetailTemplate}" />
+                                <Grid Grid.Row="3" Margin="10,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Tag="1" Style="{StaticResource SecondaryButton}" Click="ApplySlot_Click" Content="应用此展位" />
+                                    <Button Grid.Column="2" Tag="1" Style="{StaticResource DangerButton}" Click="RebuySlot_Click" Content="恢复重购" ToolTip="用于已购买后购买入口消失的车辆；模型同时消失也可直接恢复" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="2" Style="{StaticResource SlotPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="68" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="84" />
+                                    <RowDefinition Height="54" />
+                                </Grid.RowDefinitions>
+                                <Grid Margin="14,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="展位 2" FontSize="17" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="Slot2CurrentText" Text="当前：等待扫描" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="14 辆" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                </Grid>
+                                <ListBox Grid.Row="1"
+                                         x:Name="Slot2List"
+                                         Tag="2"
+                                         ItemsSource="{Binding Slot2View}"
+                                         SelectionChanged="SlotList_SelectionChanged"
+                                         Style="{StaticResource CarListBox}"
+                                         ItemContainerStyle="{StaticResource CarListItem}"
+                                         ItemTemplate="{StaticResource CarRowTemplate}" />
+                                <ContentControl Grid.Row="2" Content="{Binding SelectedSlot2}" ContentTemplate="{StaticResource SelectionDetailTemplate}" />
+                                <Grid Grid.Row="3" Margin="10,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Tag="2" Style="{StaticResource SecondaryButton}" Click="ApplySlot_Click" Content="应用此展位" />
+                                    <Button Grid.Column="2" Tag="2" Style="{StaticResource DangerButton}" Click="RebuySlot_Click" Content="恢复重购" ToolTip="用于已购买后购买入口消失的车辆；模型同时消失也可直接恢复" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="4" Style="{StaticResource SlotPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="68" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="84" />
+                                    <RowDefinition Height="54" />
+                                </Grid.RowDefinitions>
+                                <Grid Margin="14,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="展位 3" FontSize="17" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="Slot3CurrentText" Text="当前：等待扫描" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="14 辆" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                </Grid>
+                                <ListBox Grid.Row="1"
+                                         x:Name="Slot3List"
+                                         Tag="3"
+                                         ItemsSource="{Binding Slot3View}"
+                                         SelectionChanged="SlotList_SelectionChanged"
+                                         Style="{StaticResource CarListBox}"
+                                         ItemContainerStyle="{StaticResource CarListItem}"
+                                         ItemTemplate="{StaticResource CarRowTemplate}" />
+                                <ContentControl Grid.Row="2" Content="{Binding SelectedSlot3}" ContentTemplate="{StaticResource SelectionDetailTemplate}" />
+                                <Grid Grid.Row="3" Margin="10,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Tag="3" Style="{StaticResource SecondaryButton}" Click="ApplySlot_Click" Content="应用此展位" />
+                                    <Button Grid.Column="2" Tag="3" Style="{StaticResource DangerButton}" Click="RebuySlot_Click" Content="恢复重购" ToolTip="用于已购买后购买入口消失的车辆；模型同时消失也可直接恢复" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="兼容性诊断">
+                <Grid Margin="24,16,24,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="390" />
+                        <ColumnDefinition Width="1" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0" Margin="0,0,22,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="运行状态" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,14" />
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="135" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="车辆目录" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock Grid.Column="1" x:Name="CatalogDiagnosticText" Text="42 辆 / 校验通过" FontWeight="SemiBold" />
+                        </Grid>
+                        <Grid Grid.Row="2" Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="135" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="展位定位" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock Grid.Column="1" x:Name="ManagerDiagnosticText" Text="尚未扫描" TextWrapping="Wrap" />
+                        </Grid>
+                        <Grid Grid.Row="3" Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="135" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="切换函数" Foreground="{StaticResource MutedBrush}" />
+                                <TextBlock Text="交互刷新函数" Foreground="{StaticResource MutedBrush}" Margin="0,12,0,0" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock x:Name="SetterDiagnosticText" Text="尚未扫描" TextWrapping="Wrap" />
+                                <TextBlock x:Name="RefreshDiagnosticText" Text="尚未扫描" TextWrapping="Wrap" Margin="0,12,0,0" />
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Grid.Row="4" VerticalAlignment="Bottom">
+                            <TextBlock Text="购买资格诊断" FontSize="16" FontWeight="SemiBold" Margin="0,24,0,10" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ComboBox x:Name="DiagnosticSlotCombo" SelectedIndex="0" Height="36" VerticalContentAlignment="Center">
+                                    <ComboBoxItem Content="展位 1" Tag="1" />
+                                    <ComboBoxItem Content="展位 2" Tag="2" />
+                                    <ComboBoxItem Content="展位 3" Tag="3" />
+                                </ComboBox>
+                                <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="读取资格" Click="DiagnosePurchase_Click" />
+                            </Grid>
+                            <TextBlock x:Name="PurchaseDiagnosticText"
+                                       Margin="0,10,0,0"
+                                       MinHeight="44"
+                                       Text="尚未读取"
+                                       Foreground="{StaticResource MutedBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Grid.Column="1" Background="{StaticResource LineBrush}" />
+
+                    <Grid Grid.Column="2" Margin="22,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="180" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="当前展位快照" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10" />
+                        <DataGrid Grid.Row="1"
+                                  x:Name="SnapshotGrid"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserResizeRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  BorderBrush="{StaticResource LineBrush}"
+                                  RowHeaderWidth="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="展位" Binding="{Binding Slot}" Width="70" />
+                                <DataGridTextColumn Header="当前车辆" Binding="{Binding CarName}" Width="*" />
+                                <DataGridTextColumn Header="库存 ID" Binding="{Binding AftermarketId}" Width="90" />
+                                <DataGridTextColumn Header="车型 ID" Binding="{Binding ModelId}" Width="90" />
+                                <DataGridTextColumn Header="管理器地址" Binding="{Binding ManagerAddress}" Width="170" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Grid Grid.Row="2" Margin="0,18,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="操作日志" FontSize="18" FontWeight="SemiBold" />
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource IconButton}"
+                                    Content="&#xE8B7;"
+                                    ToolTip="打开诊断日志目录"
+                                    Click="OpenLogs_Click" />
+                        </Grid>
+                        <TextBox Grid.Row="3"
+                                 x:Name="DiagnosticsTextBox"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True"
+                                 TextWrapping="NoWrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 FontFamily="Cascadia Mono, Consolas"
+                                 FontSize="12"
+                                 Background="#17191D"
+                                 Foreground="#D8DCE2"
+                                 BorderThickness="0"
+                                 Padding="12" />
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="3"
+                Background="#E7E9ED"
+                BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="0,1,0,0">
+            <Grid Margin="18,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="FooterStatusText"
+                           Text="就绪"
+                           Foreground="{StaticResource MutedBrush}"
+                           FontSize="11"
+                           VerticalAlignment="Center" />
+                <TextBlock x:Name="AppVersionText"
+                           Grid.Column="1"
+                           Foreground="{StaticResource MutedBrush}"
+                           FontSize="11"
+                           VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.RowSpan="4"
+              x:Name="BusyOverlay"
+              Background="#B5202329"
+              Visibility="Collapsed"
+              Panel.ZIndex="20">
+            <Border Width="430"
+                    Background="White"
+                    CornerRadius="6"
+                    Padding="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock x:Name="BusyTitleText"
+                               Text="正在处理"
+                               FontSize="18"
+                               FontWeight="SemiBold" />
+                    <TextBlock x:Name="BusyDetailText"
+                               Margin="0,8,0,16"
+                               Text="请稍候"
+                               Foreground="{StaticResource MutedBrush}"
+                               TextWrapping="Wrap" />
+                    <ProgressBar Height="4"
+                                 IsIndeterminate="True"
+                                 Foreground="{StaticResource ActionBrush}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

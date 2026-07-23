@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E701616C-8611-4C19-B2CD-5227466F7274}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FH6ItalianRarities.Core", "src\FH6ItalianRarities.Core\FH6ItalianRarities.Core.csproj", "{6F81208D-D9DF-4ECA-8133-4AC8406A20BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FH6ItalianRarities", "src\FH6ItalianRarities\FH6ItalianRarities.csproj", "{912619B3-5E82-4DC2-80ED-37C7794AD576}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6F81208D-D9DF-4ECA-8133-4AC8406A20BB}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{6F81208D-D9DF-4ECA-8133-4AC8406A20BB}.Debug|Any CPU.Build.0 = Debug|x64
+		{6F81208D-D9DF-4ECA-8133-4AC8406A20BB}.Release|Any CPU.ActiveCfg = Release|x64
+		{6F81208D-D9DF-4ECA-8133-4AC8406A20BB}.Release|Any CPU.Build.0 = Release|x64
+		{912619B3-5E82-4DC2-80ED-37C7794AD576}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{912619B3-5E82-4DC2-80ED-37C7794AD576}.Debug|Any CPU.Build.0 = Debug|x64
+		{912619B3-5E82-4DC2-80ED-37C7794AD576}.Release|Any CPU.ActiveCfg = Release|x64
+		{912619B3-5E82-4DC2-80ED-37C7794AD576}.Release|Any CPU.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6F81208D-D9DF-4ECA-8133-4AC8406A20BB} = {E701616C-8611-4C19-B2CD-5227466F7274}
+		{912619B3-5E82-4DC2-80ED-37C7794AD576} = {E701616C-8611-4C19-B2CD-5227466F7274}
+	EndGlobalSection
+EndGlobal
