@@ -20,6 +20,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly ForzaGameService _gameService = new();
     private readonly DispatcherTimer _processTimer;
     private readonly StringBuilder _diagnosticLog = new();
+    private RareCarActivity _selectedActivity = CarCatalog.DefaultActivity;
     private CarOption? _selectedSlot1;
     private CarOption? _selectedSlot2;
     private CarOption? _selectedSlot3;
@@ -38,10 +39,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Slot1View = CreateView(1);
         Slot2View = CreateView(2);
         Slot3View = CreateView(3);
-        SelectedSlot1 = CarCatalog.ByAftermarketId(157);
-        SelectedSlot2 = CarCatalog.ByAftermarketId(160);
-        SelectedSlot3 = CarCatalog.ByAftermarketId(156);
+        SetDefaultSelections();
         DataContext = this;
+        UpdateActivityPresentation();
 
         _processTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -57,57 +57,158 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _gameService.Dispose();
         };
         RefreshFilters();
-        AppendDiagnostic("车辆目录自检通过：42 辆、每展位 14 辆、6 辆限定、2 辆特别推荐。");
+        AppendDiagnostic(
+            $"车辆目录自检通过：{CarCatalog.Activities.Count} 个活动、" +
+            $"{CarCatalog.All.Count} 辆已验证车辆；默认选择 {SelectedActivity.DisplayName}。");
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public ICollectionView Slot1View { get; }
-    public ICollectionView Slot2View { get; }
-    public ICollectionView Slot3View { get; }
+    public IReadOnlyList<RareCarActivity> Activities { get; } =
+        CarCatalog.Activities.OrderByDescending(activity => activity.FirstAvailableFrom).ToArray();
+
+    public RareCarActivity SelectedActivity
+    {
+        get => _selectedActivity;
+        set
+        {
+            if (value is null || EqualityComparer<RareCarActivity>.Default.Equals(_selectedActivity, value))
+            {
+                return;
+            }
+            _selectedActivity = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedActivity)));
+            ActivateActivity();
+        }
+    }
+
+    public ICollectionView Slot1View { get; private set; }
+    public ICollectionView Slot2View { get; private set; }
+    public ICollectionView Slot3View { get; private set; }
 
     public CarOption? SelectedSlot1
     {
         get => _selectedSlot1;
-        set
-        {
-            if (value is not null)
-            {
-                SetField(ref _selectedSlot1, value);
-            }
-        }
+        set => SetField(ref _selectedSlot1, value);
     }
 
     public CarOption? SelectedSlot2
     {
         get => _selectedSlot2;
-        set
-        {
-            if (value is not null)
-            {
-                SetField(ref _selectedSlot2, value);
-            }
-        }
+        set => SetField(ref _selectedSlot2, value);
     }
 
     public CarOption? SelectedSlot3
     {
         get => _selectedSlot3;
-        set
-        {
-            if (value is not null)
-            {
-                SetField(ref _selectedSlot3, value);
-            }
-        }
+        set => SetField(ref _selectedSlot3, value);
     }
 
     private ListCollectionView CreateView(int slot)
     {
-        var view = new ListCollectionView(CarCatalog.ForSlot(slot).ToList());
+        var cars = slot <= SelectedActivity.SlotCount
+            ? CarCatalog.ForSlot(SelectedActivity.Id, slot)
+            : [];
+        var view = new ListCollectionView(cars.ToList());
         view.Filter = FilterCar;
         return view;
     }
+
+    private void ActivateActivity()
+    {
+        Slot1View = CreateView(1);
+        Slot2View = CreateView(2);
+        Slot3View = CreateView(3);
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Slot1View)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Slot2View)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Slot3View)));
+        SetDefaultSelections();
+        _lastSnapshot = null;
+        ResetSnapshotPresentation();
+        UpdateActivityPresentation();
+        RefreshFilters();
+        AppendDiagnostic(
+            $"已选择 {SelectedActivity.DisplayName}；工具只会接受与该活动完整车池匹配的游戏内展位。");
+    }
+
+    private void SetDefaultSelections()
+    {
+        SelectedSlot1 = FindDefaultCar(1);
+        SelectedSlot2 = FindDefaultCar(2);
+        SelectedSlot3 = SelectedActivity.SlotCount >= 3 ? FindDefaultCar(3) : null;
+    }
+
+    private CarOption? FindDefaultCar(int slot)
+    {
+        var preferredId = (SelectedActivity.Id, slot) switch
+        {
+            (CarCatalog.ItalianActivityId, 1) => 157,
+            (CarCatalog.ItalianActivityId, 2) => 160,
+            (CarCatalog.ItalianActivityId, 3) => 156,
+            (CarCatalog.BritishActivityId, 1) => 200,
+            (CarCatalog.BritishActivityId, 2) => 199,
+            _ => -1
+        };
+        var cars = CarCatalog.ForSlot(SelectedActivity.Id, slot);
+        return cars.FirstOrDefault(car => car.AftermarketId == preferredId) ?? cars.FirstOrDefault();
+    }
+
+    private void UpdateActivityPresentation()
+    {
+        HeaderSubtitleText.Text =
+            $"{SelectedActivity.DisplayName}  ·  {SelectedActivity.SlotCount} 个展位  ·  " +
+            $"{CarCatalog.ForActivity(SelectedActivity.Id).Count} 辆已验证车辆";
+        ActivityPeriodText.Text = SelectedActivity.FirstAvailabilityText;
+        ApplyAllText.Text = $"应用{FormatSlotCount(SelectedActivity.SlotCount)}展位";
+        CatalogDiagnosticText.Text =
+            $"{SelectedActivity.DisplayName} / {CarCatalog.ForActivity(SelectedActivity.Id).Count} 辆 / 校验通过";
+
+        var slotCounts = Enumerable.Range(1, SelectedActivity.SlotCount)
+            .ToDictionary(slot => slot, slot => CarCatalog.ForSlot(SelectedActivity.Id, slot).Count);
+        Slot1CountText.Text = $"{slotCounts[1]} 辆";
+        Slot2CountText.Text = $"{slotCounts[2]} 辆";
+        if (SelectedActivity.SlotCount >= 3)
+        {
+            Slot3CountText.Text = $"{slotCounts[3]} 辆";
+        }
+
+        var thirdSlotVisibility = SelectedActivity.SlotCount >= 3
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        Slot3Panel.Visibility = thirdSlotVisibility;
+        DiagnosticSlot3Item.Visibility = thirdSlotVisibility;
+        Slot3SpacerColumn.Width = SelectedActivity.SlotCount >= 3
+            ? new GridLength(12)
+            : new GridLength(0);
+        Slot3Column.Width = SelectedActivity.SlotCount >= 3
+            ? new GridLength(1, GridUnitType.Star)
+            : new GridLength(0);
+        if (DiagnosticSlotCombo.SelectedIndex >= SelectedActivity.SlotCount)
+        {
+            DiagnosticSlotCombo.SelectedIndex = 0;
+        }
+    }
+
+    private void ResetSnapshotPresentation()
+    {
+        Slot1CurrentText.Text = "当前：等待扫描";
+        Slot2CurrentText.Text = "当前：等待扫描";
+        Slot3CurrentText.Text = "当前：等待扫描";
+        ManagerDiagnosticText.Text = "尚未扫描";
+        SetterDiagnosticText.Text = "尚未扫描";
+        RefreshDiagnosticText.Text = "尚未扫描";
+        CompatibilitySummaryText.Text = "尚未执行兼容性扫描";
+        CompatibilitySummaryText.Foreground = (Brush)FindResource("MutedBrush");
+        PurchaseDiagnosticText.Text = "尚未读取";
+        SnapshotGrid.ItemsSource = null;
+    }
+
+    private static string FormatSlotCount(int count) => count switch
+    {
+        2 => "两个",
+        3 => "三个",
+        _ => count.ToString(CultureInfo.InvariantCulture) + "个"
+    };
 
     private bool FilterCar(object item)
     {
@@ -170,24 +271,29 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void Inspect_Click(object sender, RoutedEventArgs e)
     {
-        await RunOperationAsync("只读兼容性扫描", async progress =>
+        var activity = SelectedActivity;
+        await RunOperationAsync($"只读扫描 {activity.DisplayName}", async progress =>
         {
-            var snapshot = await _gameService.InspectAsync(progress);
+            var snapshot = await _gameService.InspectAsync(activity.Id, progress);
             ApplySnapshot(snapshot);
-            FooterStatusText.Text = "兼容性扫描完成，未写入游戏内存";
+            FooterStatusText.Text = $"{activity.DisplayName}兼容性扫描完成，未写入游戏内存";
         });
     }
 
     private async void ApplyAll_Click(object sender, RoutedEventArgs e)
     {
-        var targets = new[] { SelectedSlot1, SelectedSlot2, SelectedSlot3 };
+        var targets = Enumerable.Range(1, SelectedActivity.SlotCount)
+            .Select(GetSelectedCar)
+            .ToArray();
         if (targets.Any(target => target is null))
         {
             ShowError("每个展位都需要选择一辆车。");
             return;
         }
 
-        await ApplyCarsAsync(targets.Cast<CarOption>().ToArray(), "应用三个展位");
+        await ApplyCarsAsync(
+            targets.Cast<CarOption>().ToArray(),
+            $"应用{SelectedActivity.DisplayName}全部展位");
     }
 
     private async void ApplySlot_Click(object sender, RoutedEventArgs e)
@@ -238,7 +344,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         var confirmation = MessageBox.Show(
             this,
-            $"为展位 {slot} 恢复“{target.ChineseName}”的购买入口？\n\n" +
+            $"为{SelectedActivity.DisplayName}展位 {slot} 恢复“{target.ChineseName}”的购买入口？\n\n" +
             "该操作会恢复资格、临时切换两辆车并让游戏重建交互。开始后请切回游戏并停留在活动场地。",
             "确认恢复重购",
             MessageBoxButton.OKCancel,
@@ -277,7 +383,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         await RunOperationAsync($"读取展位 {slot} 购买资格", async progress =>
         {
-            var diagnostic = await _gameService.DiagnosePurchaseAsync(slot, progress);
+            var diagnostic = await _gameService.DiagnosePurchaseAsync(
+                SelectedActivity.Id,
+                slot,
+                progress);
             PurchaseDiagnosticText.Text = FormatPurchaseDiagnostic(diagnostic);
             AppendDiagnostic(
                 $"资格诊断：展位 {slot}，车辆 {diagnostic.CurrentCar.OriginalName}，" +
@@ -349,11 +458,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void ApplySnapshot(GameSnapshot snapshot)
     {
+        if (snapshot.ActivityId != SelectedActivity.Id ||
+            snapshot.ExpectedSlotCount != SelectedActivity.SlotCount)
+        {
+            throw new InvalidOperationException(
+                $"Snapshot activity {snapshot.ActivityId}/{snapshot.ExpectedSlotCount} does not match " +
+                $"the selected activity {SelectedActivity.Id}/{SelectedActivity.SlotCount}.");
+        }
         _lastSnapshot = snapshot;
         var bySlot = snapshot.Slots.ToDictionary(slot => slot.Slot);
         Slot1CurrentText.Text = "当前：" + bySlot[1].CurrentCar.ChineseName;
         Slot2CurrentText.Text = "当前：" + bySlot[2].CurrentCar.ChineseName;
-        Slot3CurrentText.Text = "当前：" + bySlot[3].CurrentCar.ChineseName;
+        Slot3CurrentText.Text = bySlot.TryGetValue(3, out var thirdSlot)
+            ? "当前：" + thirdSlot.CurrentCar.ChineseName
+            : "当前：此活动无第三展位";
         ManagerDiagnosticText.Text = snapshot.ManagerDiscovery;
         SetterDiagnosticText.Text = snapshot.SetterAddress == 0
             ? "未通过特征校验"
@@ -384,7 +502,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ? Path.GetFileName(snapshot.ExecutablePath)
             : snapshot.Version;
         AppendDiagnostic(
-            $"快照完成：PID {snapshot.ProcessId}，manager={snapshot.ManagerDiscovery}，" +
+            $"快照完成：{snapshot.ActivityDisplayName}，PID {snapshot.ProcessId}，" +
+            $"manager={snapshot.ManagerDiscovery}，" +
             $"setter={snapshot.SetterDiscovery}，refresh={snapshot.RefreshDiscovery}。");
     }
 
@@ -468,7 +587,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             var visible = Slot1View.Cast<object>().Count() +
                           Slot2View.Cast<object>().Count() +
                           Slot3View.Cast<object>().Count();
-            VisibleCountText.Text = $"显示 {visible} / 42";
+            var total = CarCatalog.ForActivity(SelectedActivity.Id).Count;
+            VisibleCountText.Text = $"显示 {visible} / {total}";
         }
     }
 
@@ -514,7 +634,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         MessageBox.Show(
             this,
             message,
-            "FH6 意大利奇珍",
+            "FH6 奇珍商店工具",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
     }

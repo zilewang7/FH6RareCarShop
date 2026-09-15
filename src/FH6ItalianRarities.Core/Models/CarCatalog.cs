@@ -2,6 +2,34 @@ namespace FH6ItalianRarities.Models;
 
 public static class CarCatalog
 {
+    public const string ItalianActivityId = "italian";
+    public const string BritishActivityId = "british";
+
+    private static readonly TimeSpan ChinaStandardTimeOffset = TimeSpan.FromHours(8);
+
+    public static IReadOnlyList<RareCarActivity> Activities { get; } =
+    [
+        new(
+            ItalianActivityId,
+            "意大利奇珍",
+            "Italian Automotive",
+            new DateTimeOffset(2026, 7, 16, 22, 30, 0, ChinaStandardTimeOffset),
+            new DateTimeOffset(2026, 8, 13, 22, 30, 0, ChinaStandardTimeOffset),
+            "意大利汽车经销店",
+            3),
+        new(
+            BritishActivityId,
+            "英国奇珍",
+            "British Automotive",
+            new DateTimeOffset(2026, 9, 10, 22, 30, 0, ChinaStandardTimeOffset),
+            new DateTimeOffset(2026, 10, 8, 22, 30, 0, ChinaStandardTimeOffset),
+            "英国汽车经销店",
+            2)
+    ];
+
+    public static RareCarActivity DefaultActivity { get; } =
+        Activities.MaxBy(activity => activity.FirstAvailableFrom)!;
+
     public static IReadOnlyList<CarOption> All { get; } =
     [
         // Slot 1
@@ -89,10 +117,71 @@ public static class CarCatalog
             aliases: "f40c competizione 竞技版"),
         Car(3, 14, 161, 324, 1999, "兰博基尼", "Lamborghini", "Diablo GTR", "Diablo GTR", .85m, true,
             referencePrice: "1,000,000 CR", description: "轻量化赛道版 Diablo，兼具收藏价值与驾驶乐趣。", aliases: "diablo 迪亚波罗 gtr"),
+
+        // British Automotive - Slot 2 / right booth (runtime pool A)
+        BritishCar(2, 1, 199, 336, 1961, "捷豹", "Jaguar", "E-Type", "E-type", .75m, true,
+            description: "经典英国老爷车，适当调校后可用于 B 级或 A 级复古跑车赛事。",
+            aliases: "e type e-type 伊型 抽奖限定 wheelspin exclusive"),
+        BritishCar(2, 2, 201, 1662, 1965, "MINI", "MINI", "Cooper S", "Cooper S", .75m,
+            aliases: "mini 迷你 cooper s 65"),
+        BritishCar(2, 3, 202, 1301, 1956, "捷豹", "Jaguar", "D-Type", "D-Type", .75m,
+            aliases: "d type d-type"),
+        BritishCar(2, 4, 204, 1314, 1993, "迈凯伦", "McLaren", "F1", "F1", .75m,
+            aliases: "mclaren 麦克拉伦"),
+        BritishCar(2, 5, 205, 1376, 1999, "莲花", "Lotus", "Elise Series 1", "Elise Series 1", .75m,
+            aliases: "lotus 莲花 elise 99"),
+        BritishCar(2, 6, 212, 3631, 2022, "阿斯顿·马丁", "Aston Martin", "Valkyrie AMR Pro", "Valkyrie AMR Pro", .75m,
+            aliases: "aston martin 瓦尔基里 女武神 amr"),
+        BritishCar(2, 7, 213, 338, 1997, "迈凯伦", "McLaren", "F1 GT", "F1 GT", .75m,
+            aliases: "mclaren 麦克拉伦 longtail 长尾"),
+        BritishCar(2, 8, 214, 3449, 2020, "莲花", "Lotus", "Evija", "Evija", .75m,
+            aliases: "lotus 莲花 evija 纯电"),
+        BritishCar(2, 9, 216, 3156, 2019, "迈凯伦", "McLaren", "Speedtail", "Speedtail", .75m,
+            aliases: "mclaren 麦克拉伦 speed tail"),
+        BritishCar(2, 10, 217, 433, 2005, "TVR", "TVR", "Sagaris", "Sagaris", .75m,
+            aliases: "萨加里斯"),
+        BritishCar(2, 11, 218, 2430, 2016, "阿里尔", "Ariel", "Nomad", "Nomad", .75m,
+            aliases: "ariel 游牧者"),
+
+        // British Automotive - Slot 1 / left booth (runtime pool B)
+        BritishCar(1, 1, 200, 3185, 2019, "阿斯顿·马丁", "Aston Martin", "DBS Superleggera", "DBS Superleggera", .75m, true,
+            description: "高性能英伦 GT，适合调校为 S1 级公路巡航。",
+            aliases: "aston martin dbs superleggera 超轻版 西装暴徒 抽奖限定 wheelspin exclusive"),
+        BritishCar(1, 2, 203, 2987, 1962, "皮尔", "Peel", "P50", "P50", .75m,
+            aliases: "peel 皮尔 p 50"),
+        BritishCar(1, 3, 206, 1253, 2010, "诺布尔", "Noble", "M600", "M600", .75m,
+            aliases: "noble 诺贝尔"),
+        BritishCar(1, 4, 207, 3728, 2021, "宾利", "Bentley", "Continental GT Convertible", "Continental GT Convertible", .75m,
+            aliases: "bentley continental gtc 欧陆 敞篷"),
+        BritishCar(1, 5, 208, 3599, 2022, "戈登·默里汽车", "Gordon Murray Automotive", "T.50", "T.50", .75m,
+            aliases: "gma t50 gordon murray 戈登默里"),
+        BritishCar(1, 6, 209, 3668, 2023, "迈凯伦", "McLaren", "Artura", "Artura", .75m,
+            aliases: "mclaren 麦克拉伦 阿图拉"),
+        BritishCar(1, 7, 210, 2569, 2015, "Ultima", "Ultima", "Evolution Coupe 1020", "Evolution Coupe 1020", .75m,
+            aliases: "ultima evolution 1020 终极"),
+        BritishCar(1, 8, 211, 3153, 2019, "迈凯伦", "McLaren", "600LT", "600LT", .75m,
+            aliases: "mclaren 麦克拉伦 600 lt longtail 长尾"),
+        BritishCar(1, 9, 215, 2494, 2015, "路虎", "Land Rover", "Range Rover Sport SVR", "Range Rover Sport SVR", .75m,
+            aliases: "range rover land rover 路虎 揽胜 svr"),
+        BritishCar(1, 10, 219, 1481, 1965, "奥斯汀-希利", "Austin-Healey", "3000 MKIII", "3000 MKIII", .75m,
+            aliases: "austin healey 3000 mk3 奥斯汀希利"),
+        BritishCar(1, 11, 220, 3293, 1993, "捷豹", "Jaguar", "XJ220S TWR", "XJ220S TWR", .75m,
+            aliases: "xj220 s twr"),
     ];
 
-    public static IReadOnlyList<CarOption> ForSlot(int slot) =>
-        All.Where(car => car.Slot == slot).OrderBy(car => car.PoolPosition).ToArray();
+    public static IReadOnlyList<CarOption> ForActivity(string activityId) =>
+        All.Where(car => car.ActivityId == activityId)
+            .OrderBy(car => car.Slot)
+            .ThenBy(car => car.PoolPosition)
+            .ToArray();
+
+    public static IReadOnlyList<CarOption> ForSlot(string activityId, int slot) =>
+        All.Where(car => car.ActivityId == activityId && car.Slot == slot)
+            .OrderBy(car => car.PoolPosition)
+            .ToArray();
+
+    public static RareCarActivity GetActivity(string activityId) =>
+        Activities.Single(activity => activity.Id == activityId);
 
     public static CarOption ByAftermarketId(int id) =>
         All.Single(car => car.AftermarketId == id);
@@ -113,6 +202,25 @@ public static class CarCatalog
         string? referencePrice = null,
         string? description = null,
         string aliases = "") =>
-        new(slot, position, aftermarketId, carModelId, year, manufacturerZh, manufacturerEn,
+        new(ItalianActivityId, slot, position, aftermarketId, carModelId, year, manufacturerZh, manufacturerEn,
+            modelZh, modelEn, discount, limited, recommended, referencePrice, description, aliases);
+
+    private static CarOption BritishCar(
+        int slot,
+        int position,
+        int aftermarketId,
+        int carModelId,
+        int year,
+        string manufacturerZh,
+        string manufacturerEn,
+        string modelZh,
+        string modelEn,
+        decimal discount,
+        bool limited = false,
+        bool recommended = false,
+        string? referencePrice = null,
+        string? description = null,
+        string aliases = "") =>
+        new(BritishActivityId, slot, position, aftermarketId, carModelId, year, manufacturerZh, manufacturerEn,
             modelZh, modelEn, discount, limited, recommended, referencePrice, description, aliases);
 }

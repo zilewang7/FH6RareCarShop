@@ -7,13 +7,13 @@
     <UseWPF>true</UseWPF>
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>x64</Platforms>
-    <AssemblyName>FH6ItalianRarities</AssemblyName>
+    <AssemblyName>FH6RareCarShop</AssemblyName>
     <RootNamespace>FH6ItalianRarities</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Assets\FH6ItalianRarities.ico</ApplicationIcon>
-    <Version>1.0.4</Version>
-    <Authors>FH6 Italian Rarities Community Tool</Authors>
-    <Description>Forza Horizon 6 Italian Rarities stock selector</Description>
+    <ApplicationIcon>Assets\FH6RareCarShop.ico</ApplicationIcon>
+    <Version>2.0.0</Version>
+    <Authors>FH6 Rare Car Shop Community Tool</Authors>
+    <Description>Forza Horizon 6 multi-activity rare car shop selector</Description>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -23,7 +23,7 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <Resource Include="Assets\FH6ItalianRarities.ico" />
-    <ProjectReference Include="..\FH6ItalianRarities.Core\FH6ItalianRarities.Core.csproj" />
+    <Resource Include="Assets\FH6RareCarShop.ico" />
+    <ProjectReference Include="..\FH6ItalianRarities.Core\FH6RareCarShop.Core.csproj" />
   </ItemGroup>
 </Project>

@@ -27,10 +27,13 @@ public static class OfflineSelfTest
         var planCount = 0;
         foreach (var target in CarCatalog.All)
         {
-            foreach (var current in CarCatalog.ForSlot(target.Slot))
+            foreach (var current in CarCatalog.ForSlot(target.ActivityId, target.Slot))
             {
                 var plan = RebuyPlanFactory.Create(target, current.AftermarketId);
-                Require(plan.First.Slot == target.Slot && plan.Refresh.Slot == target.Slot,
+                Require(plan.First.ActivityId == target.ActivityId &&
+                        plan.Refresh.ActivityId == target.ActivityId &&
+                        plan.First.Slot == target.Slot &&
+                        plan.Refresh.Slot == target.Slot,
                     $"Staging plan escaped slot {target.Slot}.");
                 Require(plan.First.AftermarketId != plan.Refresh.AftermarketId,
                     $"Staging cars collided for target {target.AftermarketId}.");
@@ -61,7 +64,7 @@ public static class OfflineSelfTest
     private static int ValidatePoolScanning()
     {
         var cases = 0;
-        foreach (var definition in SlotDefinition.All)
+        foreach (var definition in SlotDefinition.AllActivities)
         {
             var buffer = Enumerable.Repeat((byte)0xA5, 320).ToArray();
             WriteIds(buffer, 32, definition.PoolIds);
@@ -114,6 +117,8 @@ public static class OfflineSelfTest
         RequirePlan(targetId: 157, currentId: 157, firstId: 159, refreshId: 152);
         RequirePlan(targetId: 160, currentId: 160, firstId: 158, refreshId: 187);
         RequirePlan(targetId: 171, currentId: 171, firstId: 161, refreshId: 172);
+        RequirePlan(targetId: 214, currentId: 214, firstId: 218, refreshId: 201);
+        RequirePlan(targetId: 211, currentId: 211, firstId: 220, refreshId: 203);
     }
 
     private static void RequirePlan(int targetId, int currentId, int firstId, int refreshId)
@@ -126,8 +131,8 @@ public static class OfflineSelfTest
 
     private static void ValidateLayout()
     {
-        Require(GameLayout.ManagerVtableProfiles.Length >= 2,
-            "Both Xbox and Steam manager profiles must be present.");
+        Require(GameLayout.ManagerVtableProfiles.Length >= 3,
+            "Current Xbox, legacy Xbox, and Steam manager profiles must be present.");
         Require(GameLayout.ManagerVtableProfiles
                     .Select(profile => (profile.VtableRva, profile.SecondVtableRva))
                     .Distinct()
@@ -148,6 +153,14 @@ public static class OfflineSelfTest
                     SecondVtableRva: 0x662F888
                 },
             "Steam 6.403 manager vtable profile changed unexpectedly.");
+        var currentXboxProfile = GameLayout.ManagerVtableProfiles.SingleOrDefault(
+            profile => profile.Name == "Xbox 3.440.853.0");
+        Require(currentXboxProfile is
+                {
+                    VtableRva: 0x6AE3A10,
+                    SecondVtableRva: 0x6AE3B60
+                },
+            "Current Xbox manager vtable profile changed unexpectedly.");
         Require(GameLayout.EligibilityGetterSignature.AsSpan().SequenceEqual(
                 new byte[] { 0x0F, 0xB6, 0x41, 0x70, 0xC3 }),
             "Eligibility getter signature changed unexpectedly.");

@@ -4,6 +4,7 @@ using System.Text;
 namespace FH6ItalianRarities.Models;
 
 public sealed record CarOption(
+    string ActivityId,
     int Slot,
     int PoolPosition,
     int AftermarketId,

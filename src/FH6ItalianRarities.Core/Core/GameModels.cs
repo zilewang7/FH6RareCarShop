@@ -19,6 +19,9 @@ public sealed record SlotState(
     CarOption CurrentCar);
 
 public sealed record GameSnapshot(
+    string ActivityId,
+    string ActivityDisplayName,
+    int ExpectedSlotCount,
     int ProcessId,
     string Version,
     string ExecutablePath,

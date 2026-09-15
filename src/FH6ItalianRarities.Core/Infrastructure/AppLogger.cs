@@ -9,7 +9,7 @@ public static class AppLogger
     private static readonly object Sync = new();
     private static readonly string Root = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "FH6ItalianRarities");
+        "FH6RareCarShop");
 
     public static string LogDirectory { get; } = Path.Combine(Root, "Logs");
 
@@ -18,7 +18,7 @@ public static class AppLogger
     public static void Initialize()
     {
         Directory.CreateDirectory(LogDirectory);
-        CurrentLogPath = Path.Combine(LogDirectory, $"FH6ItalianRarities-{DateTime.Now:yyyyMMdd}.log");
+        CurrentLogPath = Path.Combine(LogDirectory, $"FH6RareCarShop-{DateTime.Now:yyyyMMdd}.log");
         try
         {
             foreach (var file in Directory.EnumerateFiles(LogDirectory, "*.log"))

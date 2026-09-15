@@ -21,6 +21,10 @@ internal static class ManagerScanner
         IProgress<GameProgress>? progress,
         CancellationToken cancellationToken)
     {
+        var activity = definitions
+            .Select(definition => definition.Activity)
+            .DistinctBy(candidate => candidate.Id)
+            .Single();
         var profiles = GameLayout.ManagerVtableProfiles
             .Select(profile => new RuntimeManagerProfile(
                 profile,
@@ -92,7 +96,11 @@ internal static class ManagerScanner
                         ScanPoolArrays(buffer, count, current, definitions, poolPatterns, poolAddresses);
                     }
 
-                    ReportProgress(progress, reportWatch, scanned, "正在定位活动展位（优先游戏主堆）");
+                    ReportProgress(
+                        progress,
+                        reportWatch,
+                        scanned,
+                        $"正在定位{activity.DisplayName}展位（优先游戏主堆）");
                     current = Advance(current, requested, remaining);
                 }
             }
@@ -177,7 +185,8 @@ internal static class ManagerScanner
             if (fallback.Length != 1)
             {
                 throw new GameToolException(
-                    "无法安全识别三个活动展位。请确认已进入“意大利奇珍”场地，并等待车辆列表完全显示后重试。",
+                    $"无法安全识别{activity.DisplayName}的 {activity.SlotCount} 个活动展位。" +
+                    $"请确认游戏内当前开放的是“{activity.DisplayName}”，并等待车辆模型完全显示后重试。",
                     fallbackSummary);
             }
             result.Add(fallback[0]);

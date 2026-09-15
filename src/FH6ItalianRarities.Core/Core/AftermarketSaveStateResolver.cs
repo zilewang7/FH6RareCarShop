@@ -37,7 +37,7 @@ internal static class AftermarketSaveStateResolver
         if (managerVtables.Length != 1 || managerSecondVtables.Length != 1)
         {
             throw new GameToolException(
-                "三个活动展位的运行时类型不一致，已停止资格操作。",
+                "活动展位的运行时类型不一致，已停止资格操作。",
                 $"Manager vtables={managerVtables.Length}; second vtables={managerSecondVtables.Length}.");
         }
 

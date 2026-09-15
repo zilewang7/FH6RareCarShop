@@ -22,13 +22,13 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore
-        run: dotnet restore .\FH6ItalianRarities.sln
+        run: dotnet restore .\FH6RareCarShop.sln
 
       - name: Build
-        run: dotnet build .\src\FH6ItalianRarities\FH6ItalianRarities.csproj -c Release -r win-x64 --no-restore -p:TreatWarningsAsErrors=true
+        run: dotnet build .\src\FH6ItalianRarities\FH6RareCarShop.csproj -c Release -r win-x64 --no-restore -p:TreatWarningsAsErrors=true
 
       - name: Offline self-test
         shell: pwsh
         run: |
-          dotnet .\src\FH6ItalianRarities\bin\Release\net8.0-windows\win-x64\FH6ItalianRarities.dll --self-test
+          dotnet .\src\FH6ItalianRarities\bin\Release\net8.0-windows\win-x64\FH6RareCarShop.dll --self-test
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

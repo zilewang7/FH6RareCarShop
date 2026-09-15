@@ -68,9 +68,11 @@ public sealed class ForzaGameService : IDisposable
     }
 
     public async Task<GameSnapshot> InspectAsync(
+        string activityId,
         IProgress<GameProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        var activity = ResolveActivity(activityId);
         await _operationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -80,10 +82,16 @@ public sealed class ForzaGameService : IDisposable
                 {
                     progress?.Report(new GameProgress("正在连接游戏进程"));
                     using var context = OpenContext(writable: false);
-                    var managers = ResolveManagers(context, progress, cancellationToken);
+                    var managers = ResolveManagers(context, activity, progress, cancellationToken);
                     var setter = TryLocateSetter(context, cancellationToken);
                     var refresh = TryLocateRefresh(context, cancellationToken);
-                    return CreateSnapshot(context, managers.Candidates, managers.DiscoveryMethod, setter, refresh);
+                    return CreateSnapshot(
+                        context,
+                        activity,
+                        managers.Candidates,
+                        managers.DiscoveryMethod,
+                        setter,
+                        refresh);
                 }
                 catch (Exception exception)
                 {
@@ -103,7 +111,7 @@ public sealed class ForzaGameService : IDisposable
         CancellationToken cancellationToken = default)
     {
         var targets = selectedCars.OrderBy(car => car.Slot).ToArray();
-        ValidateTargets(targets);
+        var activity = ValidateTargets(targets);
 
         await _operationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -113,7 +121,7 @@ public sealed class ForzaGameService : IDisposable
                 try
                 {
                     using var context = OpenContext(writable: true);
-                    var managers = ResolveManagers(context, progress, cancellationToken);
+                    var managers = ResolveManagers(context, activity, progress, cancellationToken);
                     var setter = SetterLocator.Find(
                         context.Handle, context.ModuleBase, context.ModuleSize, cancellationToken);
                     var results = new List<SlotApplyResult>();
@@ -136,6 +144,7 @@ public sealed class ForzaGameService : IDisposable
                     var refresh = TryLocateRefresh(context, cancellationToken);
                     var snapshot = CreateSnapshot(
                         context,
+                        activity,
                         currentManagers,
                         managers.DiscoveryMethod,
                         setter,
@@ -158,11 +167,13 @@ public sealed class ForzaGameService : IDisposable
     }
 
     public async Task<PurchaseDiagnostic> DiagnosePurchaseAsync(
+        string activityId,
         int slot,
         IProgress<GameProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        ValidateSlot(slot);
+        var activity = ResolveActivity(activityId);
+        ValidateSlot(activity, slot);
         await _operationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -171,7 +182,7 @@ public sealed class ForzaGameService : IDisposable
                 try
                 {
                     using var context = OpenContext(writable: true);
-                    var managers = ResolveManagers(context, progress, cancellationToken);
+                    var managers = ResolveManagers(context, activity, progress, cancellationToken);
                     var manager = managers.Candidates.Single(candidate => candidate.Definition.Slot == slot);
                     progress?.Report(new GameProgress("正在关联购买资格状态"));
                     var saveStates = ResolveSaveState(context, manager, cancellationToken);
@@ -200,7 +211,12 @@ public sealed class ForzaGameService : IDisposable
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(target);
-        ValidateSlot(target.Slot);
+        var activity = ResolveActivity(target.ActivityId);
+        ValidateSlot(activity, target.Slot);
+        if (!CarCatalog.ForSlot(activity.Id, target.Slot).Contains(target))
+        {
+            throw new ArgumentException("The selected car is not in the verified catalog.", nameof(target));
+        }
 
         await _operationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -218,7 +234,7 @@ public sealed class ForzaGameService : IDisposable
                 try
                 {
                     context = OpenContext(writable: true);
-                    var managers = ResolveManagers(context, progress, cancellationToken);
+                    var managers = ResolveManagers(context, activity, progress, cancellationToken);
                     initialManager = managers.Candidates.Single(
                         candidate => candidate.Definition.Slot == target.Slot);
                     if (!initialManager.Definition.PoolIds.Contains(target.AftermarketId))
@@ -479,36 +495,37 @@ public sealed class ForzaGameService : IDisposable
 
     private ManagerScanResult ResolveManagers(
         ProcessContext context,
+        RareCarActivity activity,
         IProgress<GameProgress>? progress,
         CancellationToken cancellationToken)
     {
-        var definitions = SlotDefinition.All;
-        if (_managerCache is not null &&
-            _managerCache.ProcessId == context.Process.Id &&
-            _managerCache.ProcessStartTicks == context.ProcessStartTicks &&
-            _managerCache.ModuleBase == context.ModuleBase)
+        var definitions = SlotDefinition.ForActivity(activity);
+        var cacheMatchesProcess = _managerCache is not null &&
+                                  _managerCache.ProcessId == context.Process.Id &&
+                                  _managerCache.ProcessStartTicks == context.ProcessStartTicks &&
+                                  _managerCache.ModuleBase == context.ModuleBase;
+        if (cacheMatchesProcess && _managerCache!.ActivityId != activity.Id)
         {
-            var cached = new List<ManagerCandidate>();
-            foreach (var definition in definitions)
+            var cachedActivity = ResolveActivity(_managerCache.ActivityId);
+            var priorManagers = TryReadCachedManagers(
+                context,
+                SlotDefinition.ForActivity(cachedActivity),
+                _managerCache);
+            if (priorManagers is not null)
             {
-                var entry = _managerCache.Entries[definition.Slot];
-                var candidate = ManagerCandidate.TryRead(
-                    context.Handle,
-                    entry.Address,
-                    context.ModuleBase,
-                    context.ModuleSize,
-                    definition,
-                    entry.Vtable,
-                    entry.SecondVtable);
-                if (candidate is null)
-                {
-                    cached.Clear();
-                    break;
-                }
-                cached.Add(candidate);
+                throw new GameToolException(
+                    $"游戏当前识别为“{cachedActivity.DisplayName}”，与所选“{activity.DisplayName}”不一致。" +
+                    "工具未执行写入；请只在游戏内实际开放对应活动时使用。",
+                    $"Cached activity {cachedActivity.Id} remained valid while {activity.Id} was requested.");
             }
+            _managerCache = null;
+            cacheMatchesProcess = false;
+        }
 
-            if (cached.Count == definitions.Length)
+        if (cacheMatchesProcess && _managerCache!.ActivityId == activity.Id)
+        {
+            var cached = TryReadCachedManagers(context, definitions, _managerCache);
+            if (cached is not null)
             {
                 progress?.Report(new GameProgress("已复核本次游戏进程的展位缓存"));
                 return new ManagerScanResult(cached, "进程内缓存（已复核）");
@@ -516,7 +533,8 @@ public sealed class ForzaGameService : IDisposable
             _managerCache = null;
         }
 
-        progress?.Report(new GameProgress("正在定位三个活动展位"));
+        progress?.Report(new GameProgress(
+            $"正在定位{activity.DisplayName}的 {activity.SlotCount} 个活动展位"));
         var result = ManagerScanner.Find(
             context.Handle,
             context.ModuleBase,
@@ -528,6 +546,7 @@ public sealed class ForzaGameService : IDisposable
             context.Process.Id,
             context.ProcessStartTicks,
             context.ModuleBase,
+            activity.Id,
             result.Candidates.ToDictionary(
                 candidate => candidate.Definition.Slot,
                 candidate => new ManagerCacheEntry(
@@ -535,6 +554,35 @@ public sealed class ForzaGameService : IDisposable
                     candidate.Vtable,
                     candidate.SecondVtable)));
         return result;
+    }
+
+    private static IReadOnlyList<ManagerCandidate>? TryReadCachedManagers(
+        ProcessContext context,
+        IReadOnlyList<SlotDefinition> definitions,
+        ManagerCache cache)
+    {
+        var cached = new List<ManagerCandidate>();
+        foreach (var definition in definitions)
+        {
+            if (!cache.Entries.TryGetValue(definition.Slot, out var entry))
+            {
+                return null;
+            }
+            var candidate = ManagerCandidate.TryRead(
+                context.Handle,
+                entry.Address,
+                context.ModuleBase,
+                context.ModuleSize,
+                definition,
+                entry.Vtable,
+                entry.SecondVtable);
+            if (candidate is null)
+            {
+                return null;
+            }
+            cached.Add(candidate);
+        }
+        return cached.Count == definitions.Count ? cached : null;
     }
 
     private static IReadOnlyList<ManagerCandidate> RereadManagers(
@@ -920,6 +968,7 @@ public sealed class ForzaGameService : IDisposable
 
     private static GameSnapshot CreateSnapshot(
         ProcessContext context,
+        RareCarActivity activity,
         IReadOnlyList<ManagerCandidate> managers,
         string managerDiscovery,
         SetterLocation? setter,
@@ -936,6 +985,9 @@ public sealed class ForzaGameService : IDisposable
                 CarCatalog.ByAftermarketId(manager.CurrentId)))
             .ToArray();
         return new GameSnapshot(
+            activity.Id,
+            activity.DisplayName,
+            activity.SlotCount,
             context.Process.Id,
             context.Version,
             Path.GetFileName(context.ExecutablePath),
@@ -982,11 +1034,22 @@ public sealed class ForzaGameService : IDisposable
         }
     }
 
-    private static void ValidateTargets(IReadOnlyList<CarOption> targets)
+    private static RareCarActivity ValidateTargets(IReadOnlyList<CarOption> targets)
     {
-        if (targets.Count == 0 || targets.Count > 3)
+        if (targets.Count == 0)
         {
-            throw new ArgumentException("Select between one and three cars.", nameof(targets));
+            throw new ArgumentException("Select at least one car.", nameof(targets));
+        }
+        if (targets.Select(target => target.ActivityId).Distinct().Count() != 1)
+        {
+            throw new ArgumentException("All selected cars must belong to one activity.", nameof(targets));
+        }
+        var activity = ResolveActivity(targets[0].ActivityId);
+        if (targets.Count > activity.SlotCount)
+        {
+            throw new ArgumentException(
+                $"Activity {activity.Id} contains only {activity.SlotCount} slots.",
+                nameof(targets));
         }
         if (targets.Select(target => target.Slot).Distinct().Count() != targets.Count)
         {
@@ -994,19 +1057,30 @@ public sealed class ForzaGameService : IDisposable
         }
         foreach (var target in targets)
         {
-            ValidateSlot(target.Slot);
-            if (!CarCatalog.ForSlot(target.Slot).Contains(target))
+            ValidateSlot(activity, target.Slot);
+            if (!CarCatalog.ForSlot(activity.Id, target.Slot).Contains(target))
             {
                 throw new ArgumentException("The selected car is not in the verified catalog.", nameof(targets));
             }
         }
+        return activity;
     }
 
-    private static void ValidateSlot(int slot)
+    private static RareCarActivity ResolveActivity(string activityId)
     {
-        if (slot is < 1 or > 3)
+        var activity = CarCatalog.Activities.SingleOrDefault(candidate => candidate.Id == activityId);
+        return activity ?? throw new ArgumentException(
+            $"Unknown rare-car activity: {activityId}.",
+            nameof(activityId));
+    }
+
+    private static void ValidateSlot(RareCarActivity activity, int slot)
+    {
+        if (slot < 1 || slot > activity.SlotCount)
         {
-            throw new ArgumentOutOfRangeException(nameof(slot), "Slot must be 1, 2, or 3.");
+            throw new ArgumentOutOfRangeException(
+                nameof(slot),
+                $"Activity {activity.Id} uses slots 1 through {activity.SlotCount}.");
         }
     }
 
@@ -1015,7 +1089,7 @@ public sealed class ForzaGameService : IDisposable
         var processes = Process.GetProcessesByName(ProcessName);
         if (processes.Length == 0)
         {
-            throw new GameToolException("未检测到 Forza Horizon 6，请先启动游戏并进入“意大利奇珍”场地。");
+            throw new GameToolException("未检测到 Forza Horizon 6，请先启动游戏并进入当前奇珍商店场地。");
         }
 
         var selected = SelectProcess(processes);
@@ -1122,6 +1196,7 @@ public sealed class ForzaGameService : IDisposable
         int ProcessId,
         long ProcessStartTicks,
         ulong ModuleBase,
+        string ActivityId,
         IReadOnlyDictionary<int, ManagerCacheEntry> Entries);
 
     private sealed record ManagerCacheEntry(ulong Address, ulong Vtable, ulong SecondVtable);

@@ -39,7 +39,7 @@ public partial class App : Application
             {
                 MessageBox.Show(
                     "启动自检失败。\n\n" + exception.Message,
-                    "FH6 意大利奇珍",
+                    "FH6 奇珍商店工具",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
@@ -54,7 +54,7 @@ public partial class App : Application
         AppLogger.Error("Unhandled UI exception", e.Exception);
         MessageBox.Show(
             "程序遇到未处理错误，已写入诊断日志。\n\n" + e.Exception.Message,
-            "FH6 意大利奇珍",
+            "FH6 奇珍商店工具",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
         e.Handled = true;

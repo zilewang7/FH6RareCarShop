@@ -8,20 +8,24 @@ internal static class RebuyPlanFactory
 {
     public static RebuyStagingPlan Create(CarOption target, int currentId)
     {
-        var cars = CarCatalog.ForSlot(target.Slot);
-        var preferredFirstId = target.Slot switch
+        var cars = CarCatalog.ForSlot(target.ActivityId, target.Slot);
+        var preferredFirstId = (target.ActivityId, target.Slot) switch
         {
-            1 => 159,
-            2 => 158,
-            3 => 161,
-            _ => throw new ArgumentOutOfRangeException(nameof(target))
+            (CarCatalog.ItalianActivityId, 1) => 159,
+            (CarCatalog.ItalianActivityId, 2) => 158,
+            (CarCatalog.ItalianActivityId, 3) => 161,
+            (CarCatalog.BritishActivityId, 1) => 220,
+            (CarCatalog.BritishActivityId, 2) => 218,
+            _ => -1
         };
-        var preferredRefreshId = target.Slot switch
+        var preferredRefreshId = (target.ActivityId, target.Slot) switch
         {
-            1 => 152,
-            2 => 187,
-            3 => 172,
-            _ => throw new ArgumentOutOfRangeException(nameof(target))
+            (CarCatalog.ItalianActivityId, 1) => 152,
+            (CarCatalog.ItalianActivityId, 2) => 187,
+            (CarCatalog.ItalianActivityId, 3) => 172,
+            (CarCatalog.BritishActivityId, 1) => 203,
+            (CarCatalog.BritishActivityId, 2) => 201,
+            _ => -1
         };
 
         var refresh = cars.FirstOrDefault(car =>

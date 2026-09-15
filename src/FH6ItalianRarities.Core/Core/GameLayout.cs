@@ -27,6 +27,7 @@ internal static class GameLayout
 
     public static readonly ManagerVtableProfile[] ManagerVtableProfiles =
     [
+        new("Xbox 3.440.853.0", 0x6AE3A10, 0x6AE3B60),
         new("Xbox 6.403", KnownManagerVtableRva, KnownManagerSecondVtableRva),
         new("Steam 6.403.798.0", 0x662F738, 0x662F888)
     ];
@@ -63,15 +64,23 @@ internal sealed record ManagerVtableProfile(
     ulong VtableRva,
     ulong SecondVtableRva);
 
-internal sealed record SlotDefinition(int Slot, CarOption[] Cars)
+internal sealed record SlotDefinition(RareCarActivity Activity, int Slot, CarOption[] Cars)
 {
+    public string ActivityId => Activity.Id;
+
     public int[] PoolIds { get; } = Cars.Select(car => car.AftermarketId).ToArray();
 
     public IReadOnlyDictionary<int, int> ModelByAftermarketId { get; } =
         Cars.ToDictionary(car => car.AftermarketId, car => car.CarModelId);
 
-    public static SlotDefinition[] All { get; } =
-        Enumerable.Range(1, 3)
-            .Select(slot => new SlotDefinition(slot, CarCatalog.ForSlot(slot).ToArray()))
+    public static SlotDefinition[] ForActivity(RareCarActivity activity) =>
+        Enumerable.Range(1, activity.SlotCount)
+            .Select(slot => new SlotDefinition(
+                activity,
+                slot,
+                CarCatalog.ForSlot(activity.Id, slot).ToArray()))
             .ToArray();
+
+    public static SlotDefinition[] AllActivities { get; } =
+        CarCatalog.Activities.SelectMany(ForActivity).ToArray();
 }

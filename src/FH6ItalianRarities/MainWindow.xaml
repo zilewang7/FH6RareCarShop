@@ -4,8 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="FH6 意大利奇珍库存控制器"
-        Icon="Assets/FH6ItalianRarities.ico"
+        Title="FH6 奇珍商店工具"
+        Icon="Assets/FH6RareCarShop.ico"
         Width="1360"
         Height="880"
         MinWidth="1080"
@@ -104,7 +104,7 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="72" />
+            <RowDefinition Height="88" />
             <RowDefinition Height="52" />
             <RowDefinition Height="*" />
             <RowDefinition Height="32" />
@@ -117,16 +117,31 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="FH6 意大利奇珍"
+                    <TextBlock Text="FH6 奇珍商店工具"
                                Foreground="White"
                                FontSize="24"
                                FontWeight="SemiBold" />
-                    <TextBlock Text="库存控制器  ·  42 辆已验证车辆"
+                    <TextBlock x:Name="HeaderSubtitleText"
+                               Text="活动库存选择与重购交互恢复"
                                Margin="1,3,0,0"
                                Foreground="#BFC5CD"
                                FontSize="12" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Width="310" Margin="0,0,16,0">
+                        <ComboBox x:Name="ActivityCombo"
+                                  Height="34"
+                                  ItemsSource="{Binding Activities}"
+                                  SelectedItem="{Binding SelectedActivity, Mode=TwoWay}"
+                                  DisplayMemberPath="DisplayName"
+                                  VerticalContentAlignment="Center"
+                                  ToolTip="选择要识别和控制的游戏内奇珍活动" />
+                        <TextBlock x:Name="ActivityPeriodText"
+                                   Margin="1,4,0,0"
+                                   Foreground="#BFC5CD"
+                                   FontSize="10"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
                     <Button Style="{StaticResource IconButton}"
                             Click="OpenLogs_Click"
                             ToolTip="打开诊断日志目录"
@@ -259,13 +274,14 @@
                                    Foreground="{StaticResource MutedBrush}"
                                    VerticalAlignment="Center" />
                         <Button Grid.Column="4"
+                                x:Name="ApplyAllButton"
                                 Style="{StaticResource CommandButton}"
                                 Click="ApplyAll_Click">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                            Text="&#xE74E;"
                                            Margin="0,0,7,0" />
-                                <TextBlock Text="应用三个展位" />
+                                <TextBlock x:Name="ApplyAllText" Text="应用全部展位" />
                             </StackPanel>
                         </Button>
                     </Grid>
@@ -275,8 +291,8 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition x:Name="Slot3SpacerColumn" Width="12" />
+                            <ColumnDefinition x:Name="Slot3Column" Width="*" />
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0" Style="{StaticResource SlotPanelStyle}">
@@ -301,7 +317,7 @@
                                                    Margin="0,3,0,0"
                                                    TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="14 辆" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" x:Name="Slot1CountText" Text="14 辆" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                                 </Grid>
                                 <ListBox Grid.Row="1"
                                          x:Name="Slot1List"
@@ -343,7 +359,7 @@
                                         <TextBlock Text="展位 2" FontSize="17" FontWeight="SemiBold" />
                                         <TextBlock x:Name="Slot2CurrentText" Text="当前：等待扫描" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="14 辆" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" x:Name="Slot2CountText" Text="14 辆" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                                 </Grid>
                                 <ListBox Grid.Row="1"
                                          x:Name="Slot2List"
@@ -366,7 +382,7 @@
                             </Grid>
                         </Border>
 
-                        <Border Grid.Column="4" Style="{StaticResource SlotPanelStyle}">
+                        <Border Grid.Column="4" x:Name="Slot3Panel" Style="{StaticResource SlotPanelStyle}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="68" />
@@ -383,7 +399,7 @@
                                         <TextBlock Text="展位 3" FontSize="17" FontWeight="SemiBold" />
                                         <TextBlock x:Name="Slot3CurrentText" Text="当前：等待扫描" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="14 辆" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" x:Name="Slot3CountText" Text="14 辆" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                                 </Grid>
                                 <ListBox Grid.Row="1"
                                          x:Name="Slot3List"
@@ -431,7 +447,7 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="车辆目录" Foreground="{StaticResource MutedBrush}" />
-                            <TextBlock Grid.Column="1" x:Name="CatalogDiagnosticText" Text="42 辆 / 校验通过" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="1" x:Name="CatalogDiagnosticText" Text="等待活动选择" FontWeight="SemiBold" />
                         </Grid>
                         <Grid Grid.Row="2" Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
@@ -466,7 +482,7 @@
                                 <ComboBox x:Name="DiagnosticSlotCombo" SelectedIndex="0" Height="36" VerticalContentAlignment="Center">
                                     <ComboBoxItem Content="展位 1" Tag="1" />
                                     <ComboBoxItem Content="展位 2" Tag="2" />
-                                    <ComboBoxItem Content="展位 3" Tag="3" />
+                                    <ComboBoxItem x:Name="DiagnosticSlot3Item" Content="展位 3" Tag="3" />
                                 </ComboBox>
                                 <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="读取资格" Click="DiagnosePurchase_Click" />
                             </Grid>
