@@ -159,8 +159,17 @@ internal static class ManagerScanner
                 var samples = rejectionSamples[slot].Count == 0
                     ? "none"
                     : string.Join(" | ", rejectionSamples[slot]);
+                var accepted = fallbackMatches[slot].Count == 0
+                    ? "none"
+                    : string.Join(", ", fallbackMatches[slot].Values
+                        .OrderBy(candidate => candidate.Address)
+                        .Select(candidate =>
+                            $"0x{candidate.Address:X16}" +
+                            $"/vt=0x{candidate.Vtable - moduleBase:X}" +
+                            $"/vt2=0x{candidate.SecondVtable - moduleBase:X}"));
                 return $"Slot {slot}: strict={strictCount}, " +
                        $"fallback={fallbackMatches[slot].Count}, " +
+                       $"accepted=[{accepted}], " +
                        $"poolArrays={poolAddresses[slot].Count} " +
                        $"[{FormatAddresses(poolAddresses[slot])}], " +
                        $"poolRefs={referenceCounts[slot]}, rejects={samples}.";

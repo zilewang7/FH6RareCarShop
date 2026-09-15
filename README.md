@@ -1,6 +1,6 @@
 # FH6 奇珍商店工具
 
-Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交互恢复工具。当前版本为 **2.0.0**，支持 Xbox 应用版与 Steam 版。
+Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交互恢复工具。当前版本为 **2.0.1**，支持 Xbox 应用版与 Steam 版。
 
 > 本项目是非官方社区工具，与 Playground Games、Xbox、Microsoft、Steam 及车辆品牌无关。使用前请自行了解并遵守游戏服务条款，风险由使用者承担。
 
@@ -8,7 +8,7 @@ Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交
 
 | 活动 | 首次开放时间（UTC+8） | 展位与目录 | 验证状态 |
 | --- | --- | --- | --- |
-| 英国奇珍 | 2026-09-10 22:30 至 2026-10-08 22:30 | 2 个展位、每槽 11 辆，共 22 辆 | Xbox 3.440.853.0 已完成只读运行时验证 |
+| 英国奇珍 | 2026-09-10 22:30 至 2026-10-08 22:30 | 2 个展位、每槽 11 辆，共 22 辆 | Xbox 3.440.853.0、Steam 6.440.853.0 已完成只读运行时验证 |
 | 意大利奇珍 | 2026-07-16 22:30 至 2026-08-13 22:30 | 3 个展位、每槽 14 辆，共 42 辆 | Xbox 与 Steam 已完成切换和重购实测 |
 
 工具默认选择首次开放时间最晚的活动，也可在顶部切换历史活动。时间范围用于标识活动首次出现的赛季，不表示活动在未来不会复刻，也不能替代游戏内倒计时。
@@ -107,10 +107,10 @@ dotnet .\src\FH6ItalianRarities\bin\Release\net8.0-windows\win-x64\FH6RareCarSho
 生成自包含单文件分享包：
 
 ```powershell
-.\src\FH6ItalianRarities\Publish-SharePackage.ps1 -Version 2.0.0
+.\src\FH6ItalianRarities\Publish-SharePackage.ps1 -Version 2.0.1
 ```
 
-输出位于 `release/FH6-Rare-Car-Shop-v2.0.0-win-x64.zip`。
+输出位于 `release/FH6-Rare-Car-Shop-v2.0.1-win-x64.zip`。
 
 ## 项目结构
 

@@ -131,8 +131,8 @@ public static class OfflineSelfTest
 
     private static void ValidateLayout()
     {
-        Require(GameLayout.ManagerVtableProfiles.Length >= 3,
-            "Current Xbox, legacy Xbox, and Steam manager profiles must be present.");
+        Require(GameLayout.ManagerVtableProfiles.Length >= 4,
+            "Current and legacy Xbox and Steam manager profiles must be present.");
         Require(GameLayout.ManagerVtableProfiles
                     .Select(profile => (profile.VtableRva, profile.SecondVtableRva))
                     .Distinct()
@@ -145,14 +145,22 @@ public static class OfflineSelfTest
             Require(profile.SecondVtableRva > profile.VtableRva,
                 $"Manager second vtable for {profile.Name} is not ordered.");
         }
-        var steamProfile = GameLayout.ManagerVtableProfiles.SingleOrDefault(
-            profile => profile.Name.Contains("Steam", StringComparison.Ordinal));
-        Require(steamProfile is
+        var legacySteamProfile = GameLayout.ManagerVtableProfiles.SingleOrDefault(
+            profile => profile.Name == "Steam 6.403.798.0");
+        Require(legacySteamProfile is
                 {
                     VtableRva: 0x662F738,
                     SecondVtableRva: 0x662F888
                 },
-            "Steam 6.403 manager vtable profile changed unexpectedly.");
+            "Legacy Steam manager vtable profile changed unexpectedly.");
+        var currentSteamProfile = GameLayout.ManagerVtableProfiles.SingleOrDefault(
+            profile => profile.Name == "Steam 6.440.853.0");
+        Require(currentSteamProfile is
+                {
+                    VtableRva: 0x6AF5AC0,
+                    SecondVtableRva: 0x6AF5C10
+                },
+            "Current Steam manager vtable profile changed unexpectedly.");
         var currentXboxProfile = GameLayout.ManagerVtableProfiles.SingleOrDefault(
             profile => profile.Name == "Xbox 3.440.853.0");
         Require(currentXboxProfile is
