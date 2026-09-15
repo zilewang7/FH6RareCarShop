@@ -11,7 +11,7 @@
     <RootNamespace>FH6ItalianRarities</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\FH6RareCarShop.ico</ApplicationIcon>
-    <Version>2.0.1</Version>
+    <Version>2.0.2</Version>
     <Authors>FH6 Rare Car Shop Community Tool</Authors>
     <Description>Forza Horizon 6 multi-activity rare car shop selector</Description>
     <PublishSingleFile>true</PublishSingleFile>

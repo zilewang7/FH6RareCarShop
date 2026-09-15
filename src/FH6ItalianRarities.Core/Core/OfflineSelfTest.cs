@@ -161,6 +161,20 @@ public static class OfflineSelfTest
                     SecondVtableRva: 0x6AF5C10
                 },
             "Current Steam manager vtable profile changed unexpectedly.");
+        var currentSteamSaveStateProfile = GameLayout.SaveStateLinkProfiles.SingleOrDefault(
+            profile => profile.Name == "Steam 6.440.853.0");
+        Require(currentSteamSaveStateProfile is
+                {
+                    ManagerVtableRva: 0x6AF5AC0,
+                    ManagerSecondVtableRva: 0x6AF5C10,
+                    SaveStateVtableRva: 0x6AF61A8,
+                    SaveStateSecondVtableRva: 0x6AF62F8,
+                    EligibilityVtableRva: 0x6D962E8,
+                    EligibilitySecondVtableRva: 0x6D96450,
+                    ManagerEligibilityAnchorOffset: 0x28,
+                    EligibilityReferenceDelta: -0xC8
+                },
+            "Current Steam SaveState link profile changed unexpectedly.");
         var currentXboxProfile = GameLayout.ManagerVtableProfiles.SingleOrDefault(
             profile => profile.Name == "Xbox 3.440.853.0");
         Require(currentXboxProfile is

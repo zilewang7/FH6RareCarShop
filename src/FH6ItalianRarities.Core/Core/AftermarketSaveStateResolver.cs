@@ -17,6 +17,9 @@ internal static class AftermarketSaveStateResolver
 {
     private const ulong MaximumReferenceDistance = 0x4000;
     private const ulong ManagerSearchRadius = 0x200000;
+    private const ulong EligibilitySearchRadius = 0x400000;
+    private static readonly byte[] EligibilityMarker =
+        [0x53, 0x65, 0x65, 0x49, 0x74, 0x44, 0x72, 0x69, 0x76, 0x65, 0x49, 0x74];
     private static readonly long[] DerivedVtableDeltas =
         [0, 8, -8, 16, -16, 24, -24, 32, -32, 40, -40, 48, -48, 56, -56, 64, -64];
 
@@ -46,6 +49,35 @@ internal static class AftermarketSaveStateResolver
             throw new ArgumentOutOfRangeException(nameof(moduleSize));
         }
 
+        var attempts = new List<string>();
+        var linkProfile = GameLayout.SaveStateLinkProfiles.SingleOrDefault(profile =>
+            managerVtables[0] == moduleBase + profile.ManagerVtableRva &&
+            managerSecondVtables[0] == moduleBase + profile.ManagerSecondVtableRva);
+        if (linkProfile is not null)
+        {
+            var linkedResolution = TryResolveViaEligibilityObjects(
+                process,
+                moduleBase,
+                moduleSize,
+                managers,
+                linkProfile,
+                cancellationToken,
+                out var linkedDiagnostic);
+            var method = $"{linkProfile.Name} 资格对象反向关联";
+            attempts.Add($"{method}: {linkedDiagnostic}");
+            if (linkedResolution is not null)
+            {
+                AppLogger.Info(
+                    $"SaveState resolution succeeded via {method}: " +
+                    string.Join(", ", linkedResolution.Values
+                        .OrderBy(candidate => candidate.ManagerReference)
+                        .Select(candidate =>
+                            $"0x{candidate.ManagerReference:X16}->" +
+                            $"0x{candidate.SaveStateReference:X16}")));
+                return new SaveStateResolution(linkedResolution, method);
+            }
+        }
+
         var managerAddresses = managers.Select(manager => manager.Address).ToArray();
         var searchStart = managerAddresses.Min() > ManagerSearchRadius
             ? managerAddresses.Min() - ManagerSearchRadius
@@ -69,7 +101,6 @@ internal static class AftermarketSaveStateResolver
             moduleSize,
             managerVtables[0],
             managerSecondVtables[0]);
-        var attempts = new List<string>();
 
         foreach (var pair in vtablePairs)
         {
@@ -100,6 +131,164 @@ internal static class AftermarketSaveStateResolver
             "无法安全关联活动展位与购买资格状态，已停止重购操作。普通车辆切换不受影响。",
             "No unique validated AftermarketSaveState pairing matched the runtime layouts. " +
             string.Join(" | ", attempts));
+    }
+
+    private static IReadOnlyDictionary<ulong, SaveStateCandidate>? TryResolveViaEligibilityObjects(
+        SafeProcessHandle process,
+        ulong moduleBase,
+        int moduleSize,
+        IReadOnlyList<ManagerCandidate> managers,
+        SaveStateLinkProfile profile,
+        CancellationToken cancellationToken,
+        out string diagnostic)
+    {
+        var result = new Dictionary<ulong, SaveStateCandidate>();
+        var claimedSaveStates = new HashSet<ulong>();
+        var summaries = new List<string>();
+        foreach (var manager in managers)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!MemoryAccess.TryRead<ulong>(
+                    process,
+                    manager.Address + profile.ManagerEligibilityAnchorOffset,
+                    out var anchor) ||
+                !TryApplyDelta(anchor, profile.EligibilityReferenceDelta, out var eligibilityReference) ||
+                !MemoryAccess.TryRead<ulong>(process, eligibilityReference, out var eligibilityObject))
+            {
+                diagnostic =
+                    $"S{manager.Definition.Slot} eligibility link unreadable";
+                return null;
+            }
+            if (!TryValidateEligibilityObject(
+                    process,
+                    moduleBase,
+                    moduleSize,
+                    eligibilityObject,
+                    moduleBase + profile.EligibilityVtableRva,
+                    moduleBase + profile.EligibilitySecondVtableRva,
+                    out var eligibilityReason))
+            {
+                diagnostic =
+                    $"S{manager.Definition.Slot} eligibility link invalid ({eligibilityReason})";
+                return null;
+            }
+
+            var searchStart = eligibilityObject > EligibilitySearchRadius
+                ? eligibilityObject - EligibilitySearchRadius
+                : 0;
+            var searchEnd = AddClamped(eligibilityObject, EligibilitySearchRadius);
+            var eligibilityReferences = ReferenceScanner.FindValues(
+                process,
+                [eligibilityObject],
+                searchStart,
+                searchEnd,
+                cancellationToken);
+            var candidates = new List<(SaveStateCandidate Candidate, ulong Distance)>();
+            foreach (var reference in eligibilityReferences)
+            {
+                if (reference.Address < GameLayout.PurchaseEligibilityObjectOffset)
+                {
+                    continue;
+                }
+                var saveStateAddress =
+                    reference.Address - GameLayout.PurchaseEligibilityObjectOffset;
+                if (claimedSaveStates.Contains(saveStateAddress) ||
+                    !TryValidateSaveState(
+                        process,
+                        moduleBase,
+                        moduleSize,
+                        saveStateAddress,
+                        moduleBase + profile.SaveStateVtableRva,
+                        moduleBase + profile.SaveStateSecondVtableRva,
+                        out _))
+                {
+                    continue;
+                }
+
+                candidates.Add((
+                    new SaveStateCandidate(
+                        saveStateAddress,
+                        eligibilityReference,
+                        reference.Address),
+                    Distance(eligibilityObject, reference.Address)));
+            }
+
+            var unique = candidates
+                .DistinctBy(candidate => candidate.Candidate.Address)
+                .OrderBy(candidate => candidate.Distance)
+                .ToArray();
+            if (unique.Length != 1)
+            {
+                diagnostic =
+                    $"S{manager.Definition.Slot} expected one SaveState for eligibility " +
+                    $"0x{eligibilityObject:X16}, found {unique.Length}";
+                return null;
+            }
+
+            var selected = unique[0].Candidate;
+            claimedSaveStates.Add(selected.Address);
+            result.Add(manager.Address, selected);
+            summaries.Add(
+                $"S{manager.Definition.Slot}=0x{selected.Address:X16}" +
+                $"/eligibility=0x{eligibilityObject:X16}");
+        }
+
+        diagnostic = string.Join(", ", summaries);
+        return result;
+    }
+
+    private static bool TryValidateEligibilityObject(
+        SafeProcessHandle process,
+        ulong moduleBase,
+        int moduleSize,
+        ulong address,
+        ulong expectedVtable,
+        ulong expectedSecondVtable,
+        out string reason)
+    {
+        var moduleEnd = moduleBase + checked((ulong)moduleSize);
+        if (address < 0x10000 || address >= 0x0000800000000000 || (address & 0xF) != 0 ||
+            !MemoryAccess.TryRead<ulong>(process, address, out var vtable) ||
+            vtable != expectedVtable ||
+            !MemoryAccess.TryRead<ulong>(process, address + sizeof(ulong), out var secondVtable) ||
+            secondVtable != expectedSecondVtable)
+        {
+            reason = "header mismatch";
+            return false;
+        }
+
+        try
+        {
+            var marker = MemoryAccess.ReadBytes(process, address + 0x20, EligibilityMarker.Length);
+            var getterFunction = MemoryAccess.Read<ulong>(
+                process,
+                vtable + GameLayout.PredicateCheckVtableSlot);
+            var getterSignature = MemoryAccess.ReadBytes(
+                process,
+                getterFunction,
+                GameLayout.EligibilityGetterSignature.Length);
+            var flag = MemoryAccess.Read<byte>(
+                process,
+                address + GameLayout.PurchaseEligibilityFlagOffset);
+            if (!marker.AsSpan().SequenceEqual(EligibilityMarker) ||
+                MemoryAccess.Read<ulong>(process, address + 0x30) != (ulong)EligibilityMarker.Length ||
+                MemoryAccess.Read<ulong>(process, address + 0x38) is < 12 or > 15 ||
+                getterFunction < moduleBase || getterFunction >= moduleEnd ||
+                !getterSignature.AsSpan().SequenceEqual(GameLayout.EligibilityGetterSignature) ||
+                flag > 1)
+            {
+                reason = "marker, getter, or flag mismatch";
+                return false;
+            }
+        }
+        catch (Exception exception)
+        {
+            reason = $"unreadable ({exception.GetType().Name})";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
     }
 
     private static IReadOnlyDictionary<ulong, SaveStateCandidate>? TryResolve(

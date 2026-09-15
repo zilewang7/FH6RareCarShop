@@ -33,6 +33,20 @@ internal static class GameLayout
         new("Steam 6.403.798.0", 0x662F738, 0x662F888)
     ];
 
+    public static readonly SaveStateLinkProfile[] SaveStateLinkProfiles =
+    [
+        new(
+            "Steam 6.440.853.0",
+            0x6AF5AC0,
+            0x6AF5C10,
+            0x6AF61A8,
+            0x6AF62F8,
+            0x6D962E8,
+            0x6D96450,
+            0x28,
+            -0xC8)
+    ];
+
     public static readonly byte?[] SetterSignature =
     [
         0x83, 0xFA, 0xFF, 0x0F, 0x84, null, null, null, null,
@@ -64,6 +78,17 @@ internal sealed record ManagerVtableProfile(
     string Name,
     ulong VtableRva,
     ulong SecondVtableRva);
+
+internal sealed record SaveStateLinkProfile(
+    string Name,
+    ulong ManagerVtableRva,
+    ulong ManagerSecondVtableRva,
+    ulong SaveStateVtableRva,
+    ulong SaveStateSecondVtableRva,
+    ulong EligibilityVtableRva,
+    ulong EligibilitySecondVtableRva,
+    ulong ManagerEligibilityAnchorOffset,
+    long EligibilityReferenceDelta);
 
 internal sealed record SlotDefinition(RareCarActivity Activity, int Slot, CarOption[] Cars)
 {
