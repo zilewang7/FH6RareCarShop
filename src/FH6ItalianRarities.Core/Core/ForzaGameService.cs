@@ -770,9 +770,11 @@ public sealed class ForzaGameService : IDisposable
         var binding = ResolveEligibilityBinding(context, saveState);
         if (binding.OriginalFlag == 0)
         {
+            AftermarketSaveStateResolver.RevalidateOwnerBinding(
+                context.Handle, context.ModuleBase, context.ModuleSize, saveState);
             if (!mutations.Any(mutation => mutation.Address == binding.FlagAddress))
             {
-                mutations.Add(new EligibilityMutation(binding.FlagAddress, binding.OriginalFlag));
+                mutations.Add(new EligibilityMutation(binding.FlagAddress, binding.OriginalFlag, saveState));
             }
             MemoryAccess.Write(context.Handle, binding.FlagAddress, (byte)1);
         }
@@ -826,6 +828,8 @@ public sealed class ForzaGameService : IDisposable
         ProcessContext context,
         SaveStateCandidate saveState)
     {
+        AftermarketSaveStateResolver.RevalidateOwnerBinding(
+            context.Handle, context.ModuleBase, context.ModuleSize, saveState);
         var saveStateVtable = MemoryAccess.Read<ulong>(context.Handle, saveState.Address);
         var validFunction = MemoryAccess.Read<ulong>(
             context.Handle, saveStateVtable + GameLayout.SaveStateValidVtableSlot);
@@ -868,6 +872,13 @@ public sealed class ForzaGameService : IDisposable
                 $"Eligibility flag={flag} at 0x{flagAddress:X16}.");
         }
 
+        AftermarketSaveStateResolver.RevalidateOwnerBinding(
+            context.Handle, context.ModuleBase, context.ModuleSize, saveState);
+        if (saveState.OwnerBinding is { } ownerBinding &&
+            eligibilityObject != ownerBinding.EligibilityObjectAddress)
+        {
+            throw new GameToolException("购买资格对象在读取期间发生变化，已停止写入。");
+        }
         return new EligibilityBinding(
             eligibilityObject,
             flagAddress,
@@ -949,6 +960,17 @@ public sealed class ForzaGameService : IDisposable
         {
             try
             {
+                if (mutation.SaveState.OwnerBinding is not null)
+                {
+                    // A refresh can unload and reuse the old allocation. Never roll back a
+                    // naked address unless the original entity binding still exists.
+                    var binding = ResolveEligibilityBinding(context, mutation.SaveState);
+                    if (binding.FlagAddress != mutation.Address)
+                    {
+                        notes.Add("原资格对象已重建，已跳过旧地址的回滚。");
+                        continue;
+                    }
+                }
                 if (MemoryAccess.TryRead<byte>(context.Handle, mutation.Address, out var value) && value == 1)
                 {
                     MemoryAccess.Write(context.Handle, mutation.Address, mutation.OriginalValue);
@@ -1209,7 +1231,7 @@ public sealed class ForzaGameService : IDisposable
         ulong InvalidFunction,
         ulong EligibleFunction);
 
-    private sealed record EligibilityMutation(ulong Address, byte OriginalValue);
+    private sealed record EligibilityMutation(ulong Address, byte OriginalValue, SaveStateCandidate SaveState);
 
     private sealed class ProcessContext(
         Process process,

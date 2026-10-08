@@ -22,6 +22,7 @@ public static class OfflineSelfTest
     public static OfflineSelfTestResult Run()
     {
         CatalogValidator.Validate();
+        ValidateSevenElevenCatalog();
         ValidateLayout();
 
         var planCount = 0;
@@ -66,19 +67,22 @@ public static class OfflineSelfTest
         var cases = 0;
         foreach (var definition in SlotDefinition.AllActivities)
         {
-            var buffer = Enumerable.Repeat((byte)0xA5, 320).ToArray();
+            var buffer = Enumerable.Repeat((byte)0xA5, 416).ToArray();
             WriteIds(buffer, 32, definition.PoolIds);
             WriteIds(buffer, 128, definition.PoolIds.Reverse().ToArray());
 
             var invalid = definition.PoolIds.ToArray();
             invalid[^1] = invalid[0];
             WriteIds(buffer, 224, invalid);
+            var foreign = definition.PoolIds.ToArray();
+            foreign[^1] = int.MaxValue;
+            WriteIds(buffer, 320, foreign);
 
             var offsets = ManagerScanner.FindPoolOffsetsForTest(buffer, definition);
             Require(offsets.SequenceEqual(new[] { 32, 128 }),
                 $"Unordered pool scan failed for slot {definition.Slot}: " +
                 string.Join(',', offsets));
-            cases += 3;
+            cases += 4;
         }
         return cases;
     }
@@ -86,6 +90,36 @@ public static class OfflineSelfTest
     private static void WriteIds(byte[] buffer, int offset, int[] ids)
     {
         Buffer.BlockCopy(ids, 0, buffer, offset, checked(ids.Length * sizeof(int)));
+    }
+
+    private static void ValidateSevenElevenCatalog()
+    {
+        // Independent resource / live-pool cross-check. IDs 137 and 231 are reused inventory,
+        // and model 637 appears under a different ID in the Italian activity.
+        int[] expectedIds = [239, 137, 232, 235, 240, 231, 233, 234, 236, 237, 238, 241, 242, 243];
+        int[] expectedModels = [363, 3698, 568, 1260, 1395, 3441, 1229, 1514, 3524, 4223, 2738, 3829, 2363, 637];
+        var cars = CarCatalog.ForSlot(CarCatalog.SevenElevenActivityId, 1);
+        Require(cars.Select(car => car.AftermarketId).SequenceEqual(expectedIds) &&
+                cars.Select(car => car.CarModelId).SequenceEqual(expectedModels),
+            "7-Eleven inventory/model mapping differs from the verified pool.");
+        Require(cars.All(car => car.DiscountMultiplier == (car.AftermarketId switch
+            { 232 => .50m, 233 => .85m, _ => .75m })),
+            "7-Eleven price multipliers differ from the resource catalog.");
+        Require(cars.Where(car => car.IsLimited).Select(car => car.AftermarketId).SequenceEqual([232]),
+            "Playlist return cars must not be labeled Wheelspin-exclusive.");
+        Require(CarCatalog.DefaultActivity.Id == CarCatalog.SevenElevenActivityId,
+            "The latest activity must default to 7-Eleven.");
+        var profile = GameLayout.ManagerVtableProfiles.Single(p => p.Name == "Steam 6.461.691.0");
+        Require(profile.VtableRva == 0x6B0EAE8 && profile.SecondVtableRva == 0x6B0EC38,
+            "7-Eleven Steam manager profile changed unexpectedly.");
+        var link = GameLayout.SaveStateOwnerProfiles.Single(p => p.Name == "Steam 6.461.691.0");
+        Require(link is
+            {
+                ManagerVtableRva: 0x6B0EAE8, ManagerSecondVtableRva: 0x6B0EC38,
+                OwnerVtableRva: 0x6E18D18,
+                SaveStateVtableRva: 0x6B0F1D8, SaveStateSecondVtableRva: 0x6B0F328,
+                EligibilityVtableRva: 0x6DB01A8, EligibilitySecondVtableRva: 0x6DB0310
+            }, "7-Eleven Steam eligibility link profile changed unexpectedly.");
     }
 
     private static int ValidateSafetyPolicy()

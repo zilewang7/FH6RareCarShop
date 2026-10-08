@@ -4,6 +4,7 @@ public static class CarCatalog
 {
     public const string ItalianActivityId = "italian";
     public const string BritishActivityId = "british";
+    public const string SevenElevenActivityId = "seven-eleven";
 
     private static readonly TimeSpan ChinaStandardTimeOffset = TimeSpan.FromHours(8);
 
@@ -24,7 +25,15 @@ public static class CarCatalog
             new DateTimeOffset(2026, 9, 10, 22, 30, 0, ChinaStandardTimeOffset),
             new DateTimeOffset(2026, 10, 8, 22, 30, 0, ChinaStandardTimeOffset),
             "英国汽车经销店",
-            2)
+            2),
+        new(
+            SevenElevenActivityId,
+            "7-Eleven 联动奇珍",
+            "Horizon Meets / 7-Eleven Konbini",
+            new DateTimeOffset(2026, 10, 8, 22, 30, 0, ChinaStandardTimeOffset),
+            new DateTimeOffset(2026, 11, 5, 22, 30, 0, ChinaStandardTimeOffset),
+            "南岸区 7-Eleven 店后展位",
+            1)
     ];
 
     public static RareCarActivity DefaultActivity { get; } =
@@ -167,6 +176,50 @@ public static class CarCatalog
             aliases: "austin healey 3000 mk3 奥斯汀希利"),
         BritishCar(1, 11, 220, 3293, 1993, "捷豹", "Jaguar", "XJ220S TWR", "XJ220S TWR", .75m,
             aliases: "xj220 s twr"),
+
+        // 7-Eleven Konbini - one 14-car pool, verified on Steam 6.461.691.0.
+        new(SevenElevenActivityId, 1, 1, 239, 363, 1998, "斯巴鲁", "Subaru",
+            "Impreza 22B-STi Version", "Impreza 22B-STi Version", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "subaru 翼豹 22b"),
+        new(SevenElevenActivityId, 1, 2, 137, 3698, 2021, "保时捷", "Porsche",
+            "Mission R", "Mission R", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "missionr 纯电"),
+        new(SevenElevenActivityId, 1, 3, 232, 568, 1998, "梅赛德斯-奔驰", "Mercedes-Benz",
+            "AMG CLK GTR", "AMG CLK GTR", 0.50m, IsLimited: true,
+            Description: "抽奖限定，本次活动价格系数 0.50。", SearchAliases: "奔驰 clk gtr 抽奖限定 wheelspin exclusive"),
+        new(SevenElevenActivityId, 1, 4, 235, 1260, 2010, "雷克萨斯", "Lexus",
+            "LFA", "LFA", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "雷克萨斯 lfa"),
+        new(SevenElevenActivityId, 1, 5, 240, 1395, 1989, "丰田", "Toyota",
+            "MR2 SC", "MR2 SC", 0.75m, IsLimited: false,
+            Description: "嘉年华游戏列表回归稀有车。", SearchAliases: "mr2 机械增压 嘉年华 限定 playlist"),
+        new(SevenElevenActivityId, 1, 6, 231, 3441, 2019, "DeBerti", "DeBerti",
+            "丰田 Tacoma TRD 'The Performance Truck'", "Toyota Tacoma TRD 'The Performance Truck'", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "德伯蒂 tacoma trd 皮卡"),
+        new(SevenElevenActivityId, 1, 7, 233, 1229, 2008, "马自达", "Mazda",
+            "Furai", "Furai", 0.85m, IsLimited: false,
+            Description: "嘉年华游戏列表回归稀有车。", SearchAliases: "风籁 furai 嘉年华 限定 playlist"),
+        new(SevenElevenActivityId, 1, 8, 234, 1514, 1973, "马自达", "Mazda",
+            "RX-3", "RX-3", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "rx3 转子"),
+        new(SevenElevenActivityId, 1, 9, 236, 3524, 2019, "漂移方程式", "Formula Drift",
+            "#411 丰田 Corolla Hatchback", "#411 Toyota Corolla Hatchback", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "漂移 方程式 corolla 卡罗拉"),
+        new(SevenElevenActivityId, 1, 10, 237, 4223, 2000, "日产", "Nissan",
+            "Skyline GT-R V·spec II", "Skyline GT-R V·spec II", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "skyline 天际线 r34 vspec2"),
+        new(SevenElevenActivityId, 1, 11, 238, 2738, 1995, "日产", "Nissan",
+            "NISMO GT-R LM", "NISMO GT-R LM", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "nismo gt-r lm gtr 勒芒"),
+        new(SevenElevenActivityId, 1, 12, 241, 3829, 2022, "现代", "Hyundai",
+            "N Vision 74", "N Vision 74", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "现代 nvision74"),
+        new(SevenElevenActivityId, 1, 13, 242, 2363, 2017, "福特", "Ford",
+            "GT", "GT", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "福特 gt17"),
+        new(SevenElevenActivityId, 1, 14, 243, 637, 1967, "兰博基尼", "Lamborghini",
+            "Miura P400", "Miura P400", 0.75m, IsLimited: false,
+            Description: null, SearchAliases: "兰博基尼 miura 缪拉 p400"),
     ];
 
     public static IReadOnlyList<CarOption> ForActivity(string activityId) =>
