@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME.Substring(1)
+          [xml]$project = Get-Content .\src\FH6ItalianRarities\FH6RareCarShop.csproj
+          $projectVersion = @($project.Project.PropertyGroup.Version | Where-Object { $_ })[0]
+          if ($projectVersion -ne $version) {
+            throw "Tag version $version does not match project version $projectVersion."
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Owner association regression tests
+        run: dotnet run --project .\tests\FH6RareCarShop.OwnerTests\FH6RareCarShop.OwnerTests.csproj -c Release -p:TreatWarningsAsErrors=true
+
+      - name: Publish share package
+        shell: pwsh
+        run: .\src\FH6ItalianRarities\Publish-SharePackage.ps1 -Version ${{ steps.version.outputs.version }}
+
+      - name: Create draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $zip = "release\FH6-Rare-Car-Shop-v$env:VERSION-win-x64.zip"
+          $zipHash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
+          $arguments = @($env:GITHUB_REF_NAME, $zip, "--draft", "--title", $env:GITHUB_REF_NAME, "--notes", "ZIP SHA-256: $zipHash")
+          if ($env:VERSION.Contains("-")) {
+            $arguments += "--prerelease"
+          }
+          gh release create @arguments
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
