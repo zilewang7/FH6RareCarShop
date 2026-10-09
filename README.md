@@ -1,20 +1,23 @@
 # FH6 奇珍商店工具
 
-Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交互恢复工具。当前版本为 **2.1.0-preview.1**，支持 Xbox 应用版与 Steam 版。
+Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交互恢复工具。当前版本为 **2.1.0**，支持 Xbox 应用版与 Steam 版。
 
 > 本项目是非官方社区工具，与 Playground Games、Xbox、Microsoft、Steam 及车辆品牌无关。使用前请自行了解并遵守游戏服务条款，风险由使用者承担。
 
-## 7-Eleven 适配预览
+## 7-Eleven 联动
 
-本版新增 2026-10-08 Horizon Meets / 7-Eleven 联动：**1 个展位、14 辆候选车**，默认选择 Mazda Furai。已在 Steam **6.461.691.0** 完成完整车池、车型映射与 setter / refresh 唯一特征的只读验证，并通过离线自检。
+本版支持 2026-10-08 Horizon Meets / 7-Eleven 联动：**1 个展位、14 辆候选车**，默认选择 Mazda Furai。Xbox **3.461.691.0** 与 Steam **6.461.691.0** 均已收录快速定位画像，购买资格均按同实体组件关联解析。
 
-使用者于 2026-10-08 反馈已在游戏内完成“购买 → 恢复重购 → 再次购买”闭环。该结果为使用者实测反馈，工具侧只读检查和自动化检查另行记录。Xbox 本次更新尚未验证。完整目录、验证记录和使用方法见 [7-Eleven 适配记录](docs/SEVEN_ELEVEN.md)。
+- Xbox 3.461.691.0（2026-10-10）：生产只读扫描、资格诊断、车辆切换和完整重购事务实测通过；并以 MR2 SC 完成实机闭环：购买后车辆模型与入口一同消失，恢复重购后车辆重新出现并可再次购买。
+- Steam 6.461.691.0（2026-10-08）：完整车池、车型映射、setter / refresh 唯一特征与购买资格解析通过只读验证；使用者反馈已完成“购买 → 恢复重购 → 再次购买”闭环。
+
+完整目录、验证记录和使用方法见 [7-Eleven 适配记录](docs/SEVEN_ELEVEN.md)。
 
 ## 支持的活动
 
 | 活动 | 首次开放时间（UTC+8） | 展位与目录 | 验证状态 |
 | --- | --- | --- | --- |
-| 7-Eleven 联动 | 2026-10-08 22:30 至 2026-11-05 22:30 | 1 个展位、14 辆 | Steam 6.461.691.0 只读验证；使用者确认重购购买闭环成功 |
+| 7-Eleven 联动 | 2026-10-08 22:30 至 2026-11-05 22:30 | 1 个展位、14 辆 | Xbox 3.461.691.0 已完成切换、重购事务与实机购买闭环；Steam 6.461.691.0 只读验证，使用者确认重购购买闭环成功 |
 | 英国奇珍 | 2026-09-10 22:30 至 2026-10-08 22:30 | 2 个展位、每槽 11 辆，共 22 辆 | Xbox 3.440.853.0 已完成只读验证；Steam 6.440.853.0 已完成扫描、资格诊断与重购事务验证 |
 | 意大利奇珍 | 2026-07-16 22:30 至 2026-08-13 22:30 | 3 个展位、每槽 14 辆，共 42 辆 | Xbox 与 Steam 已完成切换和重购实测 |
 
@@ -31,6 +34,8 @@ Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交
 - 车辆模型与购买入口同时消失时，自动通过同活动、同展位的中转车辆重建交互。
 - 已知版本快速定位、未知版本结构回退、只读兼容性扫描和本地诊断日志。
 - Steam `6.440.853.0` 使用资格对象反向关联解析，修复购后入口消失时的 SaveState 误报。
+- Xbox `3.461.691.0` 与 Steam `6.461.691.0` 使用同实体组件关联解析购买资格，要求 manager、SaveState 与资格对象同属一个实体且结果唯一。
+- Xbox 应用版的游戏 exe 不含版本资源，诊断页与日志中的游戏版本改从应用包身份读取。
 
 源码也可作为后续同类奇珍活动工具的参考基座。可复用部分包括活动化目录、完整结构不变量定位、版本画像与回退、受校验的游戏函数调用、远程线程状态管理和事务式回滚。
 
@@ -116,17 +121,19 @@ dotnet run --project .\tests\FH6RareCarShop.OwnerTests\FH6RareCarShop.OwnerTests
 生成自包含单文件分享包：
 
 ```powershell
-.\src\FH6ItalianRarities\Publish-SharePackage.ps1 -Version 2.1.0-preview.1
+.\src\FH6ItalianRarities\Publish-SharePackage.ps1 -Version 2.1.0
 ```
 
-输出位于 `release/FH6-Rare-Car-Shop-v2.1.0-preview.1-win-x64.zip`。
+输出位于 `release/FH6-Rare-Car-Shop-v2.1.0-win-x64.zip`。
 
 ## 项目结构
 
 - `src/FH6ItalianRarities`：WPF 界面与发布脚本（保留旧目录名以维持源码路径兼容）。
 - `src/FH6ItalianRarities.Core`：活动目录、进程发现、内存校验、展位切换与重购事务。
 - `docs/REVERSE_ENGINEERING.md`：从行为观测到活动化稳定定位的逆向思路。
-- `.github/workflows/build.yml`：Windows 构建与离线自检。
+- `docs/SEVEN_ELEVEN.md`：7-Eleven 目录、Steam / Xbox 版本画像与验证记录。
+- `tests/FH6RareCarShop.OwnerTests`：购买资格同实体关联的合成内存回归测试，覆盖全部 owner 画像。
+- `.github/workflows`：Windows 构建、离线自检、关联回归测试与 tag 发布。
 
 ## 许可证
 

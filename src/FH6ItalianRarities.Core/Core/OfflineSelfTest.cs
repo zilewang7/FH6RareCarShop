@@ -23,6 +23,7 @@ public static class OfflineSelfTest
     {
         CatalogValidator.Validate();
         ValidateSevenElevenCatalog();
+        ValidatePackageVersion();
         ValidateLayout();
 
         var planCount = 0;
@@ -120,6 +121,32 @@ public static class OfflineSelfTest
                 SaveStateVtableRva: 0x6B0F1D8, SaveStateSecondVtableRva: 0x6B0F328,
                 EligibilityVtableRva: 0x6DB01A8, EligibilitySecondVtableRva: 0x6DB0310
             }, "7-Eleven Steam eligibility link profile changed unexpectedly.");
+        var xboxProfile = GameLayout.ManagerVtableProfiles.Single(p => p.Name == "Xbox 3.461.691.0");
+        Require(xboxProfile.VtableRva == 0x6AFBB78 && xboxProfile.SecondVtableRva == 0x6AFBCC8,
+            "7-Eleven Xbox manager profile changed unexpectedly.");
+        var xboxLink = GameLayout.SaveStateOwnerProfiles.Single(p => p.Name == "Xbox 3.461.691.0");
+        Require(xboxLink is
+            {
+                ManagerVtableRva: 0x6AFBB78, ManagerSecondVtableRva: 0x6AFBCC8,
+                OwnerVtableRva: 0x6E07198,
+                SaveStateVtableRva: 0x6AFC268, SaveStateSecondVtableRva: 0x6AFC3B8,
+                EligibilityVtableRva: 0x6D9E418, EligibilitySecondVtableRva: 0x6D9E580
+            }, "7-Eleven Xbox eligibility link profile changed unexpectedly.");
+        Require(GameLayout.SaveStateOwnerProfiles.All(owner =>
+                GameLayout.ManagerVtableProfiles.Count(manager =>
+                    manager.VtableRva == owner.ManagerVtableRva &&
+                    manager.SecondVtableRva == owner.ManagerSecondVtableRva) == 1),
+            "Every owner profile must match exactly one manager profile.");
+    }
+
+    private static void ValidatePackageVersion()
+    {
+        Require(GamePackage.ParseVersion("Microsoft.ForteBaseGame_3.461.691.0_x64__8wekyb3d8bbwe") ==
+                "3.461.691.0",
+            "Xbox package version parsing failed.");
+        Require(GamePackage.ParseVersion("Microsoft.ForteBaseGame_3.461.691_x64__8wekyb3d8bbwe") is null &&
+                GamePackage.ParseVersion("forzahorizon6.exe") is null,
+            "Malformed package names must not produce a version.");
     }
 
     private static int ValidateSafetyPolicy()

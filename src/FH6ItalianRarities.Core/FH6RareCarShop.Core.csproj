@@ -7,7 +7,7 @@
     <Platforms>x64</Platforms>
     <AssemblyName>FH6RareCarShop.Core</AssemblyName>
     <RootNamespace>FH6ItalianRarities</RootNamespace>
-    <Version>2.1.0-preview.1</Version>
+    <Version>2.1.0</Version>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 </Project>

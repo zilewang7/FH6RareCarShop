@@ -111,4 +111,10 @@ internal static class NativeMethods
         nint address,
         out MemoryBasicInformation64 buffer,
         nuint length);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    public static extern int GetPackageFullName(
+        SafeProcessHandle process,
+        ref uint packageFullNameLength,
+        [Out] char[]? packageFullName);
 }

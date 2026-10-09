@@ -37,21 +37,18 @@ public sealed class ForzaGameService : IDisposable
         {
             selected = SelectProcess(processes);
             string executablePath;
-            string version;
             try
             {
                 executablePath = selected.MainModule?.FileName ?? string.Empty;
-                version = GetVersion(executablePath);
             }
             catch
             {
                 executablePath = string.Empty;
-                version = string.Empty;
             }
             return new GameProcessStatus(
                 true,
                 selected.Id,
-                version,
+                ReadGameBuild(selected.Id, executablePath).Version,
                 Path.GetFileName(executablePath));
         }
         finally
@@ -1129,7 +1126,7 @@ public sealed class ForzaGameService : IDisposable
             var moduleBase = checked((ulong)module.BaseAddress.ToInt64());
             var moduleSize = module.ModuleMemorySize;
             var path = module.FileName;
-            var version = GetVersion(path);
+            var build = ReadGameBuild(selected.Id, path);
             var processStartTicks = selected.StartTime.ToUniversalTime().Ticks;
             var handle = NativeMethods.OpenProcess(writable ? FullAccess : ReadAccess, false, selected.Id);
             if (handle.IsInvalid)
@@ -1139,14 +1136,9 @@ public sealed class ForzaGameService : IDisposable
                 throw new Win32Exception(error, $"OpenProcess failed for PID {selected.Id}.");
             }
 
-            var distribution = path.Contains("steamapps", StringComparison.OrdinalIgnoreCase)
-                ? "Steam"
-                : path.Contains("XboxGames", StringComparison.OrdinalIgnoreCase)
-                    ? "Xbox"
-                    : "Unknown";
             AppLogger.Info(
-                $"Game context opened: distribution={distribution}; writable={writable}; " +
-                $"pid={selected.Id}; version={version}; executable={Path.GetFileName(path)}; " +
+                $"Game context opened: distribution={build.Distribution}; writable={writable}; " +
+                $"pid={selected.Id}; version={build.Version}; executable={Path.GetFileName(path)}; " +
                 $"module=0x{moduleBase:X16}; size=0x{moduleSize:X}.");
             return new ProcessContext(
                 selected,
@@ -1154,7 +1146,7 @@ public sealed class ForzaGameService : IDisposable
                 moduleBase,
                 moduleSize,
                 path,
-                version,
+                build.Version,
                 processStartTicks);
         }
         catch
@@ -1177,14 +1169,38 @@ public sealed class ForzaGameService : IDisposable
             }
         }).First();
 
-    private static string GetVersion(string executablePath)
+    private static GameBuild ReadGameBuild(int processId, string executablePath)
+    {
+        var packageVersion = GamePackage.TryReadVersion(processId);
+        var fileVersion = ReadFileVersion(executablePath);
+        var distribution = executablePath.Contains("steamapps", StringComparison.OrdinalIgnoreCase)
+            ? "Steam"
+            : packageVersion is not null ||
+              executablePath.Contains("XboxGames", StringComparison.OrdinalIgnoreCase)
+                ? "Xbox"
+                : "Unknown";
+        return new GameBuild(
+            string.IsNullOrWhiteSpace(fileVersion) ? packageVersion ?? string.Empty : fileVersion,
+            distribution);
+    }
+
+    private static string ReadFileVersion(string executablePath)
     {
         if (string.IsNullOrWhiteSpace(executablePath))
         {
             return string.Empty;
         }
-        var info = FileVersionInfo.GetVersionInfo(executablePath);
-        return info.FileVersion ?? info.ProductVersion ?? string.Empty;
+        try
+        {
+            var info = FileVersionInfo.GetVersionInfo(executablePath);
+            return string.IsNullOrWhiteSpace(info.FileVersion)
+                ? info.ProductVersion ?? string.Empty
+                : info.FileVersion;
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     private static Exception Normalize(Exception exception, string operation)
@@ -1222,6 +1238,8 @@ public sealed class ForzaGameService : IDisposable
         IReadOnlyDictionary<int, ManagerCacheEntry> Entries);
 
     private sealed record ManagerCacheEntry(ulong Address, ulong Vtable, ulong SecondVtable);
+
+    private sealed record GameBuild(string Version, string Distribution);
 
     private sealed record EligibilityBinding(
         ulong EligibilityObjectAddress,
