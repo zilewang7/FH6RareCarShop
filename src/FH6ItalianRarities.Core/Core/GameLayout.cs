@@ -27,10 +27,24 @@ internal static class GameLayout
 
     public static readonly ManagerVtableProfile[] ManagerVtableProfiles =
     [
+        new("Steam 6.461.691.0", 0x6B0EAE8, 0x6B0EC38),
         new("Xbox 3.440.853.0", 0x6AE3A10, 0x6AE3B60),
         new("Steam 6.440.853.0", 0x6AF5AC0, 0x6AF5C10),
         new("Xbox 6.403", KnownManagerVtableRva, KnownManagerSecondVtableRva),
         new("Steam 6.403.798.0", 0x662F738, 0x662F888)
+    ];
+
+    public static readonly SaveStateOwnerProfile[] SaveStateOwnerProfiles =
+    [
+        new(
+            "Steam 6.461.691.0",
+            0x6B0EAE8,
+            0x6B0EC38,
+            0x6E18D18,
+            0x6B0F1D8,
+            0x6B0F328,
+            0x6DB01A8,
+            0x6DB0310)
     ];
 
     public static readonly SaveStateLinkProfile[] SaveStateLinkProfiles =
@@ -89,6 +103,16 @@ internal sealed record SaveStateLinkProfile(
     ulong EligibilitySecondVtableRva,
     ulong ManagerEligibilityAnchorOffset,
     long EligibilityReferenceDelta);
+
+internal sealed record SaveStateOwnerProfile(
+    string Name,
+    ulong ManagerVtableRva,
+    ulong ManagerSecondVtableRva,
+    ulong OwnerVtableRva,
+    ulong SaveStateVtableRva,
+    ulong SaveStateSecondVtableRva,
+    ulong EligibilityVtableRva,
+    ulong EligibilitySecondVtableRva);
 
 internal sealed record SlotDefinition(RareCarActivity Activity, int Slot, CarOption[] Cars)
 {

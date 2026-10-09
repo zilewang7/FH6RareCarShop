@@ -7,7 +7,13 @@ namespace FH6ItalianRarities.Core;
 internal sealed record SaveStateCandidate(
     ulong Address,
     ulong ManagerReference,
-    ulong SaveStateReference);
+    ulong SaveStateReference,
+    SaveStateOwnerBinding? OwnerBinding = null);
+
+internal sealed record SaveStateOwnerBinding(
+    ManagerCandidate Manager,
+    ulong OwnerAddress,
+    ulong EligibilityObjectAddress);
 
 internal sealed record SaveStateResolution(
     IReadOnlyDictionary<ulong, SaveStateCandidate> ByManager,
@@ -50,6 +56,25 @@ internal static class AftermarketSaveStateResolver
         }
 
         var attempts = new List<string>();
+        var ownerProfile = GameLayout.SaveStateOwnerProfiles.SingleOrDefault(profile =>
+            managerVtables[0] == moduleBase + profile.ManagerVtableRva &&
+            managerSecondVtables[0] == moduleBase + profile.ManagerSecondVtableRva);
+        if (ownerProfile is not null)
+        {
+            var ownerResolution = TryResolveViaOwnerComponents(
+                process, moduleBase, moduleSize, managers, ownerProfile,
+                cancellationToken, out var ownerDiagnostic);
+            var method = $"{ownerProfile.Name} 同实体组件关联";
+            if (ownerResolution is null)
+            {
+                throw new GameToolException(
+                    "无法安全关联活动展位与购买资格状态，已停止重购操作。普通车辆切换不受影响。",
+                    $"{method}: {ownerDiagnostic}");
+            }
+            AppLogger.Info($"SaveState resolution succeeded via {method}: {ownerDiagnostic}");
+            return new SaveStateResolution(ownerResolution, method);
+        }
+
         var linkProfile = GameLayout.SaveStateLinkProfiles.SingleOrDefault(profile =>
             managerVtables[0] == moduleBase + profile.ManagerVtableRva &&
             managerSecondVtables[0] == moduleBase + profile.ManagerSecondVtableRva);
@@ -132,6 +157,154 @@ internal static class AftermarketSaveStateResolver
             "No unique validated AftermarketSaveState pairing matched the runtime layouts. " +
             string.Join(" | ", attempts));
     }
+
+    private static IReadOnlyDictionary<ulong, SaveStateCandidate>? TryResolveViaOwnerComponents(
+        SafeProcessHandle process,
+        ulong moduleBase,
+        int moduleSize,
+        IReadOnlyList<ManagerCandidate> managers,
+        SaveStateOwnerProfile profile,
+        CancellationToken cancellationToken,
+        out string diagnostic)
+    {
+        // The entity owns a vector of secondary Component interface pointers.
+        // Resolve through that membership, not the allocation order of nearby objects.
+        const ulong ownerOffset = 0x10;
+        const ulong interfaceOffset = 8;
+        const ulong maximumComponentBytes = 1024 * sizeof(ulong);
+        var result = new Dictionary<ulong, SaveStateCandidate>();
+        var claimedSaveStates = new HashSet<ulong>();
+        var details = new List<string>();
+        foreach (var manager in managers)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            diagnostic = $"S{manager.Definition.Slot} owner component collection is invalid";
+            if (!MemoryAccess.TryRead<ulong>(process, manager.Address, out var managerVtable) ||
+                managerVtable != moduleBase + profile.ManagerVtableRva ||
+                !MemoryAccess.TryRead<ulong>(process, manager.Address + 8, out var managerSecondVtable) ||
+                managerSecondVtable != moduleBase + profile.ManagerSecondVtableRva ||
+                !MemoryAccess.TryRead<ulong>(process, manager.Address + ownerOffset, out var owner) ||
+                !IsHeapPointer(owner) ||
+                !MemoryAccess.TryRead<ulong>(process, owner, out var ownerVtable) ||
+                ownerVtable != moduleBase + profile.OwnerVtableRva ||
+                !MemoryAccess.TryRead<ulong>(process, owner + 8, out var begin) ||
+                !MemoryAccess.TryRead<ulong>(process, owner + 16, out var end) ||
+                !MemoryAccess.TryRead<ulong>(process, owner + 24, out var capacity) ||
+                !IsHeapPointer(begin) || !IsHeapPointer(end) || !IsHeapPointer(capacity) ||
+                end <= begin || capacity < end || capacity - begin > maximumComponentBytes)
+            {
+                return null;
+            }
+
+            var components = new Dictionary<ulong, ulong>();
+            for (var reference = begin; reference < end; reference += sizeof(ulong))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!MemoryAccess.TryRead<ulong>(process, reference, out var componentInterface) ||
+                    !IsHeapPointer(componentInterface) || componentInterface < 0x10000 + interfaceOffset)
+                {
+                    return null;
+                }
+                var component = componentInterface - interfaceOffset;
+                if (!MemoryAccess.TryRead<ulong>(process, component + ownerOffset, out var componentOwner) ||
+                    componentOwner != owner || !components.TryAdd(component, reference))
+                {
+                    return null;
+                }
+            }
+            if (!components.TryGetValue(manager.Address, out var managerReference))
+            {
+                diagnostic = $"S{manager.Definition.Slot} manager is absent from its owner collection";
+                return null;
+            }
+
+            var candidates = new List<SaveStateCandidate>();
+            foreach (var (component, reference) in components)
+            {
+                if (!TryValidateSaveState(
+                        process, moduleBase, moduleSize, component,
+                        moduleBase + profile.SaveStateVtableRva,
+                        moduleBase + profile.SaveStateSecondVtableRva, out _) ||
+                    !MemoryAccess.TryRead<ulong>(
+                        process, component + GameLayout.PurchaseEligibilityObjectOffset, out var eligibility) ||
+                    !components.ContainsKey(eligibility) ||
+                    !TryValidateEligibilityObject(
+                        process, moduleBase, moduleSize, eligibility,
+                        moduleBase + profile.EligibilityVtableRva,
+                        moduleBase + profile.EligibilitySecondVtableRva, out _))
+                {
+                    continue;
+                }
+                candidates.Add(new SaveStateCandidate(component, managerReference, reference,
+                    new SaveStateOwnerBinding(manager, owner, eligibility)));
+            }
+            if (candidates.Count != 1 || !claimedSaveStates.Add(candidates[0].Address))
+            {
+                diagnostic = $"S{manager.Definition.Slot} expected one unclaimed owner SaveState, found {candidates.Count}";
+                return null;
+            }
+            if (!MemoryAccess.TryRead<ulong>(process, manager.Address + ownerOffset, out var finalOwner) ||
+                finalOwner != owner ||
+                !MemoryAccess.TryRead<ulong>(process, owner + 8, out var finalBegin) || finalBegin != begin ||
+                !MemoryAccess.TryRead<ulong>(process, owner + 16, out var finalEnd) || finalEnd != end ||
+                !MemoryAccess.TryRead<ulong>(process, owner + 24, out var finalCapacity) || finalCapacity != capacity)
+            {
+                diagnostic = $"S{manager.Definition.Slot} owner collection changed during resolution";
+                return null;
+            }
+            foreach (var (component, reference) in components)
+            {
+                if (!MemoryAccess.TryRead<ulong>(process, reference, out var currentInterface) ||
+                    currentInterface != component + interfaceOffset ||
+                    !MemoryAccess.TryRead<ulong>(process, component + ownerOffset, out var currentOwner) ||
+                    currentOwner != owner)
+                {
+                    diagnostic = $"S{manager.Definition.Slot} component membership changed during resolution";
+                    return null;
+                }
+            }
+            var selected = candidates[0];
+            if (!MemoryAccess.TryRead<ulong>(process,
+                    selected.Address + GameLayout.PurchaseEligibilityObjectOffset, out var finalEligibility) ||
+                finalEligibility != selected.OwnerBinding!.EligibilityObjectAddress)
+            {
+                diagnostic = $"S{manager.Definition.Slot} eligibility binding changed during resolution";
+                return null;
+            }
+            result.Add(manager.Address, candidates[0]);
+            details.Add($"S{manager.Definition.Slot}=0x{candidates[0].Address:X16}/owner=0x{owner:X16}/components={components.Count}");
+        }
+        diagnostic = string.Join(", ", details);
+        return result;
+    }
+
+    internal static void RevalidateOwnerBinding(
+        SafeProcessHandle process, ulong moduleBase, int moduleSize, SaveStateCandidate candidate)
+    {
+        if (candidate.OwnerBinding is not { } expected)
+        {
+            return;
+        }
+        var profile = GameLayout.SaveStateOwnerProfiles.SingleOrDefault(profile =>
+            expected.Manager.Vtable == moduleBase + profile.ManagerVtableRva &&
+            expected.Manager.SecondVtable == moduleBase + profile.ManagerSecondVtableRva);
+        var diagnostic = "owner profile no longer matches";
+        var live = profile is null ? null : TryResolveViaOwnerComponents(
+            process, moduleBase, moduleSize, [expected.Manager], profile,
+            CancellationToken.None, out diagnostic);
+        if (live is null || !live.TryGetValue(expected.Manager.Address, out var current) ||
+            current.Address != candidate.Address ||
+            current.OwnerBinding?.OwnerAddress != expected.OwnerAddress ||
+            current.OwnerBinding?.EligibilityObjectAddress != expected.EligibilityObjectAddress)
+        {
+            throw new GameToolException(
+                "展位购买交互已重建或资格关联发生变化，已停止本次资格写入。请重新扫描后重试。",
+                $"Owner binding changed before use: {diagnostic}");
+        }
+    }
+
+    private static bool IsHeapPointer(ulong address) =>
+        address >= 0x10000 && address < 0x0000800000000000 && (address & 7) == 0;
 
     private static IReadOnlyDictionary<ulong, SaveStateCandidate>? TryResolveViaEligibilityObjects(
         SafeProcessHandle process,

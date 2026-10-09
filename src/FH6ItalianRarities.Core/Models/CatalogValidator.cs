@@ -2,28 +2,31 @@ namespace FH6ItalianRarities.Models;
 
 public static class CatalogValidator
 {
-    private static readonly HashSet<int> LimitedIds = [157, 160, 156, 161, 159, 158, 199, 200];
+    private static readonly HashSet<int> LimitedIds = [157, 160, 156, 161, 159, 158, 199, 200, 232];
     private static readonly HashSet<int> RecommendedIds = [157, 160];
 
     public static void Validate()
     {
         var cars = CarCatalog.All;
-        Require(cars.Count == 64, $"Expected 64 cars, found {cars.Count}.");
+        Require(cars.Count == 78, $"Expected 78 catalog entries, found {cars.Count}.");
         Require(cars.Select(car => car.AftermarketId).Distinct().Count() == cars.Count,
             "Aftermarket IDs must be unique.");
-        Require(cars.Select(car => car.CarModelId).Distinct().Count() == cars.Count,
-            "Car model IDs must be unique.");
+        // A returning model may have a different inventory entry and price in another activity.
+        Require(CarCatalog.Activities.Select(activity => activity.Id).Distinct().Count() ==
+                CarCatalog.Activities.Count, "Activity IDs must be unique.");
 
         foreach (var activity in CarCatalog.Activities)
         {
             var activityCars = CarCatalog.ForActivity(activity.Id);
             Require(activityCars.Count > 0, $"Activity {activity.Id} has no cars.");
+            Require(activityCars.Select(car => car.CarModelId).Distinct().Count() == activityCars.Count,
+                $"Car model IDs must be unique within activity {activity.Id}.");
             Require(activityCars.All(car => car.Slot is >= 1 && car.Slot <= activity.SlotCount),
                 $"Activity {activity.Id} contains a car outside its slot range.");
             foreach (var slot in Enumerable.Range(1, activity.SlotCount))
             {
                 var slotCars = CarCatalog.ForSlot(activity.Id, slot);
-                Require(slotCars.Count >= 3, $"Activity {activity.Id} slot {slot} needs at least three cars.");
+                Require(slotCars.Count >= 4, $"Activity {activity.Id} slot {slot} needs at least four cars.");
                 Require(slotCars.Select(car => car.PoolPosition)
                         .SequenceEqual(Enumerable.Range(1, slotCars.Count)),
                     $"Activity {activity.Id} slot {slot} pool positions are not contiguous.");
@@ -40,6 +43,9 @@ public static class CatalogValidator
         Require(Enumerable.Range(1, 2).All(slot =>
                 CarCatalog.ForSlot(CarCatalog.BritishActivityId, slot).Count == 11),
             "British Automotive must contain two 11-car pools.");
+        Require(CarCatalog.GetActivity(CarCatalog.SevenElevenActivityId).SlotCount == 1 &&
+                CarCatalog.ForSlot(CarCatalog.SevenElevenActivityId, 1).Count == 14,
+            "7-Eleven must contain one 14-car pool.");
 
         Require(cars.Where(car => car.IsLimited).Select(car => car.AftermarketId).ToHashSet()
                 .SetEquals(LimitedIds),

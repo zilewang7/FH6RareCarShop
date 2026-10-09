@@ -32,3 +32,6 @@ jobs:
         run: |
           dotnet .\src\FH6ItalianRarities\bin\Release\net8.0-windows\win-x64\FH6RareCarShop.dll --self-test
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Owner association regression tests
+        run: dotnet run --project .\tests\FH6RareCarShop.OwnerTests\FH6RareCarShop.OwnerTests.csproj -c Release -p:TreatWarningsAsErrors=true

@@ -32,7 +32,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         var version = GetType().Assembly.GetName().Version;
-        AppVersionText.Text = version is null
+        var informationalVersion = GetType().Assembly
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+            .FirstOrDefault()?.InformationalVersion.Split('+')[0];
+        AppVersionText.Text = !string.IsNullOrEmpty(informationalVersion)
+            ? $"v{informationalVersion}  ·  x64"
+            : version is null
             ? "x64"
             : $"v{version.Major}.{version.Minor}.{version.Build}  ·  x64";
 
@@ -135,11 +141,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         SelectedSlot1 = FindDefaultCar(1);
         SelectedSlot2 = FindDefaultCar(2);
-        SelectedSlot3 = SelectedActivity.SlotCount >= 3 ? FindDefaultCar(3) : null;
+        SelectedSlot3 = FindDefaultCar(3);
     }
 
     private CarOption? FindDefaultCar(int slot)
     {
+        if (slot > SelectedActivity.SlotCount)
+        {
+            return null;
+        }
+
         var preferredId = (SelectedActivity.Id, slot) switch
         {
             (CarCatalog.ItalianActivityId, 1) => 157,
@@ -147,6 +158,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             (CarCatalog.ItalianActivityId, 3) => 156,
             (CarCatalog.BritishActivityId, 1) => 200,
             (CarCatalog.BritishActivityId, 2) => 199,
+            (CarCatalog.SevenElevenActivityId, 1) => 233,
             _ => -1
         };
         var cars = CarCatalog.ForSlot(SelectedActivity.Id, slot);
@@ -166,27 +178,36 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var slotCounts = Enumerable.Range(1, SelectedActivity.SlotCount)
             .ToDictionary(slot => slot, slot => CarCatalog.ForSlot(SelectedActivity.Id, slot).Count);
         Slot1CountText.Text = $"{slotCounts[1]} 辆";
-        Slot2CountText.Text = $"{slotCounts[2]} 辆";
-        if (SelectedActivity.SlotCount >= 3)
-        {
-            Slot3CountText.Text = $"{slotCounts[3]} 辆";
-        }
+        Slot2CountText.Text = $"{slotCounts.GetValueOrDefault(2)} 辆";
+        Slot3CountText.Text = $"{slotCounts.GetValueOrDefault(3)} 辆";
 
-        var thirdSlotVisibility = SelectedActivity.SlotCount >= 3
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-        Slot3Panel.Visibility = thirdSlotVisibility;
-        DiagnosticSlot3Item.Visibility = thirdSlotVisibility;
-        Slot3SpacerColumn.Width = SelectedActivity.SlotCount >= 3
-            ? new GridLength(12)
-            : new GridLength(0);
-        Slot3Column.Width = SelectedActivity.SlotCount >= 3
-            ? new GridLength(1, GridUnitType.Star)
-            : new GridLength(0);
+        ConfigureOptionalSlot(2, Slot2Panel, DiagnosticSlot2Item, Slot2SpacerColumn, Slot2Column);
+        ConfigureOptionalSlot(3, Slot3Panel, DiagnosticSlot3Item, Slot3SpacerColumn, Slot3Column);
         if (DiagnosticSlotCombo.SelectedIndex >= SelectedActivity.SlotCount)
         {
             DiagnosticSlotCombo.SelectedIndex = 0;
         }
+    }
+
+    private void ConfigureOptionalSlot(
+        int slot,
+        Border panel,
+        ComboBoxItem diagnosticItem,
+        ColumnDefinition spacerColumn,
+        ColumnDefinition slotColumn)
+    {
+        var isAvailable = slot <= SelectedActivity.SlotCount;
+        var visibility = isAvailable
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        panel.Visibility = visibility;
+        diagnosticItem.Visibility = visibility;
+        spacerColumn.Width = isAvailable
+            ? new GridLength(12)
+            : new GridLength(0);
+        slotColumn.Width = isAvailable
+            ? new GridLength(1, GridUnitType.Star)
+            : new GridLength(0);
     }
 
     private void ResetSnapshotPresentation()
@@ -205,6 +226,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private static string FormatSlotCount(int count) => count switch
     {
+        1 => "一个",
         2 => "两个",
         3 => "三个",
         _ => count.ToString(CultureInfo.InvariantCulture) + "个"
@@ -468,7 +490,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _lastSnapshot = snapshot;
         var bySlot = snapshot.Slots.ToDictionary(slot => slot.Slot);
         Slot1CurrentText.Text = "当前：" + bySlot[1].CurrentCar.ChineseName;
-        Slot2CurrentText.Text = "当前：" + bySlot[2].CurrentCar.ChineseName;
+        Slot2CurrentText.Text = bySlot.TryGetValue(2, out var secondSlot)
+            ? "当前：" + secondSlot.CurrentCar.ChineseName
+            : "当前：此活动无第二展位";
         Slot3CurrentText.Text = bySlot.TryGetValue(3, out var thirdSlot)
             ? "当前：" + thirdSlot.CurrentCar.ChineseName
             : "当前：此活动无第三展位";

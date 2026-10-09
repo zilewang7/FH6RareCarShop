@@ -1,13 +1,20 @@
 # FH6 奇珍商店工具
 
-Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交互恢复工具。当前版本为 **2.0.2**，支持 Xbox 应用版与 Steam 版。
+Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交互恢复工具。当前版本为 **2.1.0-preview.1**，支持 Xbox 应用版与 Steam 版。
 
 > 本项目是非官方社区工具，与 Playground Games、Xbox、Microsoft、Steam 及车辆品牌无关。使用前请自行了解并遵守游戏服务条款，风险由使用者承担。
+
+## 7-Eleven 适配预览
+
+本版新增 2026-10-08 Horizon Meets / 7-Eleven 联动：**1 个展位、14 辆候选车**，默认选择 Mazda Furai。已在 Steam **6.461.691.0** 完成完整车池、车型映射与 setter / refresh 唯一特征的只读验证，并通过离线自检。
+
+使用者于 2026-10-08 反馈已在游戏内完成“购买 → 恢复重购 → 再次购买”闭环。该结果为使用者实测反馈，工具侧只读检查和自动化检查另行记录。Xbox 本次更新尚未验证。完整目录、验证记录和使用方法见 [7-Eleven 适配记录](docs/SEVEN_ELEVEN.md)。
 
 ## 支持的活动
 
 | 活动 | 首次开放时间（UTC+8） | 展位与目录 | 验证状态 |
 | --- | --- | --- | --- |
+| 7-Eleven 联动 | 2026-10-08 22:30 至 2026-11-05 22:30 | 1 个展位、14 辆 | Steam 6.461.691.0 只读验证；使用者确认重购购买闭环成功 |
 | 英国奇珍 | 2026-09-10 22:30 至 2026-10-08 22:30 | 2 个展位、每槽 11 辆，共 22 辆 | Xbox 3.440.853.0 已完成只读验证；Steam 6.440.853.0 已完成扫描、资格诊断与重购事务验证 |
 | 意大利奇珍 | 2026-07-16 22:30 至 2026-08-13 22:30 | 3 个展位、每槽 14 辆，共 42 辆 | Xbox 与 Steam 已完成切换和重购实测 |
 
@@ -17,9 +24,9 @@ Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交
 
 ## 功能
 
-- 英国奇珍 22 辆与意大利奇珍 42 辆完整目录，按活动动态显示 2 或 3 个展位。
+- 7-Eleven 14 辆、英国奇珍 22 辆与意大利奇珍 42 辆完整目录，按活动动态显示 1、2 或 3 个展位。
 - 按原名、中文译名、品牌、年份、库存 ID 或车型 ID 搜索。
-- 标记英国奇珍 2 辆、意大利奇珍 6 辆抽奖限定车辆，并特别推荐 599XX Evolution 与 Sesto Elemento。
+- 标记 7-Eleven 的 AMG CLK GTR、英国奇珍 2 辆、意大利奇珍 6 辆抽奖限定车辆；Furai 与 MR2 SC 在说明中标注为嘉年华回归稀有车。
 - 为购买后失去购买入口的车辆恢复重购交互。
 - 车辆模型与购买入口同时消失时，自动通过同活动、同展位的中转车辆重建交互。
 - 已知版本快速定位、未知版本结构回退、只读兼容性扫描和本地诊断日志。
@@ -103,15 +110,16 @@ Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交
 dotnet restore .\FH6RareCarShop.sln
 dotnet build .\src\FH6ItalianRarities\FH6RareCarShop.csproj -c Release -r win-x64 -p:TreatWarningsAsErrors=true
 dotnet .\src\FH6ItalianRarities\bin\Release\net8.0-windows\win-x64\FH6RareCarShop.dll --self-test
+dotnet run --project .\tests\FH6RareCarShop.OwnerTests\FH6RareCarShop.OwnerTests.csproj -c Release
 ```
 
 生成自包含单文件分享包：
 
 ```powershell
-.\src\FH6ItalianRarities\Publish-SharePackage.ps1 -Version 2.0.2
+.\src\FH6ItalianRarities\Publish-SharePackage.ps1 -Version 2.1.0-preview.1
 ```
 
-输出位于 `release/FH6-Rare-Car-Shop-v2.0.2-win-x64.zip`。
+输出位于 `release/FH6-Rare-Car-Shop-v2.1.0-preview.1-win-x64.zip`。
 
 ## 项目结构
 

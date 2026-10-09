@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "2.0.2"
+    [string]$Version = "2.1.0-preview.1"
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,6 +49,8 @@ New-Item -ItemType Directory -Path $packageDirectory | Out-Null
 $publishedExe = Join-Path $publishDirectory "FH6RareCarShop.exe"
 Copy-Item -LiteralPath $publishedExe -Destination $packageDirectory
 Copy-Item -LiteralPath (Join-Path $projectRoot "README.txt") -Destination $packageDirectory
+Copy-Item -LiteralPath (Join-Path $repositoryRoot "LICENSE") -Destination $packageDirectory
+Copy-Item -LiteralPath (Join-Path $repositoryRoot "docs\SEVEN_ELEVEN.md") -Destination $packageDirectory
 
 $hash = Get-FileHash -LiteralPath (Join-Path $packageDirectory "FH6RareCarShop.exe") -Algorithm SHA256
 "SHA256  $($hash.Hash)  FH6RareCarShop.exe" |

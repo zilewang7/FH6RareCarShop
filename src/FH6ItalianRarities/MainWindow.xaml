@@ -289,8 +289,8 @@
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition x:Name="Slot2SpacerColumn" Width="12" />
+                            <ColumnDefinition x:Name="Slot2Column" Width="*" />
                             <ColumnDefinition x:Name="Slot3SpacerColumn" Width="12" />
                             <ColumnDefinition x:Name="Slot3Column" Width="*" />
                         </Grid.ColumnDefinitions>
@@ -342,7 +342,7 @@
                             </Grid>
                         </Border>
 
-                        <Border Grid.Column="2" Style="{StaticResource SlotPanelStyle}">
+                        <Border Grid.Column="2" x:Name="Slot2Panel" Style="{StaticResource SlotPanelStyle}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="68" />
@@ -481,7 +481,7 @@
                                 </Grid.ColumnDefinitions>
                                 <ComboBox x:Name="DiagnosticSlotCombo" SelectedIndex="0" Height="36" VerticalContentAlignment="Center">
                                     <ComboBoxItem Content="展位 1" Tag="1" />
-                                    <ComboBoxItem Content="展位 2" Tag="2" />
+                                    <ComboBoxItem x:Name="DiagnosticSlot2Item" Content="展位 2" Tag="2" />
                                     <ComboBoxItem x:Name="DiagnosticSlot3Item" Content="展位 3" Tag="3" />
                                 </ComboBox>
                                 <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="读取资格" Click="DiagnosePurchase_Click" />
