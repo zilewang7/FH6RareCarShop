@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "2.1.0"
+    [string]$Version = "2.3.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,7 +18,7 @@ $project = Join-Path $projectRoot "FH6RareCarShop.csproj"
 $publishDirectory = Join-Path $projectRoot "bin\Release\net8.0-windows\win-x64\publish"
 $selfTestDll = Join-Path $projectRoot "bin\Release\net8.0-windows\win-x64\FH6RareCarShop.dll"
 
-if (-not $packageDirectory.StartsWith($releaseRoot, [StringComparison]::OrdinalIgnoreCase)) {
+if (-not $packageDirectory.StartsWith($releaseRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
     throw "Resolved package directory escaped the release root."
 }
 
