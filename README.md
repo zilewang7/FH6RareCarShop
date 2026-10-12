@@ -1,6 +1,6 @@
 # FH6 奇珍商店工具
 
-Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交互恢复工具。当前版本为 **2.1.0**，支持 Xbox 应用版与 Steam 版。
+Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择、重购交互恢复与自动购买工具。当前源码版本为 **2.3.0**，支持 Xbox 应用版与 Steam 版。
 
 > 本项目是非官方社区工具，与 Playground Games、Xbox、Microsoft、Steam 及车辆品牌无关。使用前请自行了解并遵守游戏服务条款，风险由使用者承担。
 
@@ -31,6 +31,9 @@ Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交
 - 按原名、中文译名、品牌、年份、库存 ID 或车型 ID 搜索。
 - 标记 7-Eleven 的 AMG CLK GTR、英国奇珍 2 辆、意大利奇珍 6 辆抽奖限定车辆；Furai 与 MR2 SC 在说明中标注为嘉年华回归稀有车。
 - 为购买后失去购买入口的车辆恢复重购交互。
+- 在主界面顶部配置自动购买脚本：连续按 Enter、等待购买结束、自动恢复重购、等待加载并重复购买同一车辆。
+- 填写购买数量后执行对应轮数并自动停止；0 表示无限循环。支持 F8 全局停止、前台焦点检查与参数保存。
+- 游戏内半透明悬浮窗显示车辆、已执行购买轮次、目标数量、当前状态、运行时间和全局停止键；鼠标可穿透，不获取输入焦点。
 - 车辆模型与购买入口同时消失时，自动通过同活动、同展位的中转车辆重建交互。
 - 已知版本快速定位、未知版本结构回退、只读兼容性扫描和本地诊断日志。
 - Steam `6.440.853.0` 使用资格对象反向关联解析，修复购后入口消失时的 SaveState 误报。
@@ -69,6 +72,40 @@ Windows x64 下的 Forza Horizon 6 多活动奇珍商店库存选择与重购交
 5. 等待工具显示完成，然后在场地内确认购买入口。
 
 完整刷新依赖游戏线程。等待期间不要强制关闭工具；退出游戏会清除所有进程内临时状态。其他空展位不会阻断当前目标展位的恢复操作。
+
+## 自动购买
+
+主界面顶部的“自动购买脚本”使用对应展位已经选中的车辆，开始后锁定活动、展位和目标车辆。
+
+1. 在游戏内进入活动场地，并站在目标展位的购买位置。先确认此位置可以通过连续按 Enter 完成购买，购买结束后仍能在原位置进入下一次购买。
+2. 在工具下方为该展位选择车辆，再在自动购买面板选择目标展位。
+3. 设置时序参数和**购买数量**。例如填写 `10` 就执行 10 轮购买；最后一轮结束后自动停止，不再额外恢复重购。填写 `0` 表示持续购买，取消“重复购买该车辆”则只执行 1 轮。
+4. 点击“启动自动购买”，在倒计时结束前切回游戏。
+5. 脚本先校验活动与所需函数特征、应用目标车辆，并在购买交互已消失时先恢复入口；随后执行“连续按 Enter → 等待 → 恢复重购 → 等待加载 → 下一轮”的循环。恢复步骤不会弹出每轮确认框。
+6. 在游戏中按 **F8**，或点击面板的停止按钮结束脚本。切出游戏、检测到快捷键操作或游戏退出也会停止循环。
+
+| 参数 | 默认值 | 含义 |
+| --- | --- | --- |
+| 连按 Enter | 9 秒 | 每轮持续重复按下并释放 Enter，范围 0.1–120 秒，可填写 9.5 秒 |
+| 按键间隔 | 120 毫秒 | 两次按下之间的间隔，范围 60–2000 毫秒 |
+| 购买后等待 | 0 秒 | 等待购买动画、确认页面结束，范围 0–60 秒 |
+| 恢复后等待 | 0 秒 | 等待车辆与购买入口重新加载，范围 0–60 秒 |
+| 启动倒计时 | 5 秒 | 留出切回游戏的时间，范围 0–60 秒 |
+| 购买数量 | 0 | 填写 N 就执行 N 轮；0 为无限循环 |
+
+首次可填写 1 或 2，确认当前游戏位置与时序合适，再增加数量。面板显示已执行轮次；脚本采用固定时序，不读取车库或存档确认入库，实际购买成功与数量以游戏为准。恢复失败或兼容性校验失败时停止后续操作。
+
+停止会释放脚本按下的 Enter。已经开始的重购事务会完成清理后停止，不会继续下一轮；关闭工具窗口也会先请求停止并等待当前操作结束。F8 被其他程序占用时，脚本会提示并拒绝启动。
+
+参数保存在 `%LOCALAPPDATA%\FH6RareCarShop\AutoPurchase.json`，下次启动自动恢复。车辆选择仍以本次面板中的选择为准。
+
+### 游戏内悬浮窗
+
+自动购买面板中的“游戏内悬浮窗”默认勾选，开关随参数保存。启动脚本后，窗口位于游戏画面的左上角，显示锁定的车辆名称、已执行购买轮次、目标数量（或无限）、时序参数、当前阶段、运行时间及 **F8 全局停止**。
+
+悬浮窗跟随游戏客户区与显示器缩放，只有目标游戏在前台时显示；切到桌面或其他应用时隐藏。它不获取焦点，鼠标操作穿透到游戏，工具主窗口最小化不会主动隐藏它。购买结束或停止后，结果保留 8 秒再关闭；关闭主窗口会同时关闭悬浮窗。
+
+显示的进度按执行轮次统计，不读取车库确认实际入库。建议使用窗口或无边框模式；独占全屏能否显示悬浮窗需要实机验证。悬浮窗使用独立 WPF 窗口和 Windows 的分层、鼠标穿透及不激活属性，不需要向游戏注入图形钩子。机制依据见 [Windows 分层窗口文档](https://learn.microsoft.com/en-us/windows/win32/winmsg/window-features#layered-windows) 和 [扩展窗口样式文档](https://learn.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles)。
 
 ## 意大利限定车辆
 
@@ -116,15 +153,17 @@ dotnet restore .\FH6RareCarShop.sln
 dotnet build .\src\FH6ItalianRarities\FH6RareCarShop.csproj -c Release -r win-x64 -p:TreatWarningsAsErrors=true
 dotnet .\src\FH6ItalianRarities\bin\Release\net8.0-windows\win-x64\FH6RareCarShop.dll --self-test
 dotnet run --project .\tests\FH6RareCarShop.OwnerTests\FH6RareCarShop.OwnerTests.csproj -c Release
+dotnet run --project .\tests\FH6RareCarShop.AutomationTests\FH6RareCarShop.AutomationTests.csproj -c Release -p:TreatWarningsAsErrors=true
+dotnet run --project .\tests\FH6RareCarShop.UiTests\FH6RareCarShop.UiTests.csproj -c Release -p:TreatWarningsAsErrors=true
 ```
 
 生成自包含单文件分享包：
 
 ```powershell
-.\src\FH6ItalianRarities\Publish-SharePackage.ps1 -Version 2.1.0
+.\src\FH6ItalianRarities\Publish-SharePackage.ps1 -Version 2.3.0
 ```
 
-输出位于 `release/FH6-Rare-Car-Shop-v2.1.0-win-x64.zip`。
+输出位于 `release/FH6-Rare-Car-Shop-v2.3.0-win-x64.zip`。
 
 ## 项目结构
 
@@ -133,6 +172,8 @@ dotnet run --project .\tests\FH6RareCarShop.OwnerTests\FH6RareCarShop.OwnerTests
 - `docs/REVERSE_ENGINEERING.md`：从行为观测到活动化稳定定位的逆向思路。
 - `docs/SEVEN_ELEVEN.md`：7-Eleven 目录、Steam / Xbox 版本画像与验证记录。
 - `tests/FH6RareCarShop.OwnerTests`：购买资格同实体关联的合成内存回归测试，覆盖全部 owner 画像。
+- `tests/FH6RareCarShop.AutomationTests`：自动购买循环、指定数量、停止、焦点丢失、键盘结构与参数保存测试；不连接游戏、不发送实际按键。
+- `tests/FH6RareCarShop.UiTests`：主界面控件、参数解析、数量进度、活动展位切换、悬浮窗原生属性与关闭行为验证；隔离用户参数，不显示窗口或发送按键，并在 `artifacts/` 生成界面与悬浮窗预览。
 - `.github/workflows`：Windows 构建、离线自检、关联回归测试与 tag 发布。
 
 ## 许可证

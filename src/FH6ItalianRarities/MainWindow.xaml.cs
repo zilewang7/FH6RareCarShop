@@ -28,8 +28,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private bool _isBusy;
     private string _lastProgressMessage = string.Empty;
 
-    public MainWindow()
+    public MainWindow() : this(new AutoPurchaseSettingsStore(AutoPurchaseSettingsStore.DefaultPath)) { }
+
+    internal MainWindow(AutoPurchaseSettingsStore autoSettings)
     {
+        _autoSettings = autoSettings;
         InitializeComponent();
         var version = GetType().Assembly.GetName().Version;
         var informationalVersion = GetType().Assembly
@@ -48,6 +51,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SetDefaultSelections();
         DataContext = this;
         UpdateActivityPresentation();
+        InitializeAutoPurchase();
 
         _processTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -60,6 +64,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Closed += (_, _) =>
         {
             _processTimer.Stop();
+            CloseAutoOverlay();
             _gameService.Dispose();
         };
         RefreshFilters();
@@ -78,7 +83,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         get => _selectedActivity;
         set
         {
-            if (value is null || EqualityComparer<RareCarActivity>.Default.Equals(_selectedActivity, value))
+            if (_isBusy || value is null || EqualityComparer<RareCarActivity>.Default.Equals(_selectedActivity, value))
             {
                 return;
             }
@@ -95,19 +100,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public CarOption? SelectedSlot1
     {
         get => _selectedSlot1;
-        set => SetField(ref _selectedSlot1, value);
+        set { SetField(ref _selectedSlot1, value); UpdateAutoTarget(); }
     }
 
     public CarOption? SelectedSlot2
     {
         get => _selectedSlot2;
-        set => SetField(ref _selectedSlot2, value);
+        set { SetField(ref _selectedSlot2, value); UpdateAutoTarget(); }
     }
 
     public CarOption? SelectedSlot3
     {
         get => _selectedSlot3;
-        set => SetField(ref _selectedSlot3, value);
+        set { SetField(ref _selectedSlot3, value); UpdateAutoTarget(); }
     }
 
     private ListCollectionView CreateView(int slot)
@@ -171,6 +176,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             $"{SelectedActivity.DisplayName}  ·  {SelectedActivity.SlotCount} 个展位  ·  " +
             $"{CarCatalog.ForActivity(SelectedActivity.Id).Count} 辆已验证车辆";
         ActivityPeriodText.Text = SelectedActivity.FirstAvailabilityText;
+        UpdateAutoSlots();
         ApplyAllText.Text = $"应用{FormatSlotCount(SelectedActivity.SlotCount)}展位";
         CatalogDiagnosticText.Text =
             $"{SelectedActivity.DisplayName} / {CarCatalog.ForActivity(SelectedActivity.Id).Count} 辆 / 校验通过";
@@ -254,6 +260,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnClosing(object? sender, CancelEventArgs e)
     {
+        if (_autoCancellation is not null)
+        {
+            e.Cancel = true;
+            _autoCloseRequested = true;
+            StopAutoPurchase();
+            return;
+        }
         if (!_isBusy)
         {
             return;
@@ -646,6 +659,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             .Append(DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture))
             .Append("] ")
             .AppendLine(message);
+        // Keep unattended loops from growing the in-memory diagnostic view forever.
+        if (_diagnosticLog.Length > 100_000)
+        {
+            var trimAt = _diagnosticLog.ToString().IndexOf('\n', _diagnosticLog.Length - 60_000);
+            if (trimAt >= 0) _diagnosticLog.Remove(0, trimAt + 1);
+        }
         if (DiagnosticsTextBox is not null)
         {
             DiagnosticsTextBox.Text = _diagnosticLog.ToString();

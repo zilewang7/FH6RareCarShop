@@ -7,9 +7,9 @@
         Title="FH6 奇珍商店工具"
         Icon="Assets/FH6RareCarShop.ico"
         Width="1360"
-        Height="880"
+        Height="940"
         MinWidth="1080"
-        MinHeight="720"
+        MinHeight="800"
         Background="{StaticResource CanvasBrush}"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
@@ -106,6 +106,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="88" />
             <RowDefinition Height="52" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="32" />
         </Grid.RowDefinitions>
@@ -146,7 +147,7 @@
                             Click="OpenLogs_Click"
                             ToolTip="打开诊断日志目录"
                             Content="&#xE8B7;" />
-                    <Button Margin="8,0,0,0"
+                    <Button x:Name="InspectButton" Margin="8,0,0,0"
                             Style="{StaticResource SecondaryButton}"
                             Click="Inspect_Click">
                         <StackPanel Orientation="Horizontal">
@@ -193,7 +194,88 @@
             </Grid>
         </Border>
 
-        <TabControl Grid.Row="2"
+        <Border Grid.Row="2" Margin="18,12,18,0" Padding="16,12"
+                Background="#EDF7FA" BorderBrush="{StaticResource ActionBrush}"
+                BorderThickness="1" CornerRadius="6">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="自动购买脚本" FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{StaticResource ActionBrush}" />
+                        <TextBlock x:Name="AutoRoundsText" Text="已执行 0 轮" Margin="18,0,0,0"
+                                   Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button x:Name="AutoStartButton" Content="启动自动购买"
+                                Style="{StaticResource CommandButton}" Click="AutoStart_Click" />
+                        <Button x:Name="AutoStopButton" Content="停止 · F8" Margin="10,0,0,0"
+                                IsEnabled="False" Style="{StaticResource DangerButton}" Click="AutoStop_Click" />
+                    </StackPanel>
+                </Grid>
+                <StackPanel Grid.Row="1" x:Name="AutoConfigurationPanel" Margin="0,10,0,0">
+                    <DockPanel Margin="0,0,0,10">
+                        <CheckBox x:Name="AutoOverlayCheckBox" DockPanel.Dock="Right" IsChecked="True"
+                                  Margin="18,0,0,0" Content="游戏内悬浮窗" VerticalAlignment="Center"
+                                  ToolTip="在游戏左上角显示半透明进度，鼠标可穿透且不抢焦点；适用于窗口/无边框模式" />
+                        <CheckBox x:Name="AutoRepeatCheckBox" DockPanel.Dock="Right" IsChecked="True"
+                                  Content="重复购买该车辆（自动恢复重购）" VerticalAlignment="Center"
+                                  Checked="AutoRepeat_Changed" Unchecked="AutoRepeat_Changed" />
+                        <TextBlock Text="目标展位" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <ComboBox x:Name="AutoSlotCombo" Width="70" Height="28"
+                                  VerticalContentAlignment="Center" SelectionChanged="AutoSlot_SelectionChanged"
+                                  ToolTip="使用下方对应展位已经选中的车辆；开始后锁定本轮目标" />
+                        <TextBlock x:Name="AutoTargetText" Margin="10,0,16,0" VerticalAlignment="Center"
+                                   FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                    <WrapPanel>
+                        <StackPanel Width="122" Margin="0,0,12,0">
+                            <TextBlock Text="连按 Enter（秒）" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox x:Name="AutoEnterDurationBox" Text="9" Height="28" Margin="0,4,0,0"
+                                     VerticalContentAlignment="Center" Padding="6,0" ToolTip="0.1–120 秒；到达购买位置后持续重复按 Enter" />
+                        </StackPanel>
+                        <StackPanel Width="122" Margin="0,0,12,0">
+                            <TextBlock Text="按键间隔（毫秒）" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox x:Name="AutoEnterIntervalBox" Text="120" Height="28" Margin="0,4,0,0"
+                                     VerticalContentAlignment="Center" Padding="6,0" ToolTip="60–2000 毫秒；每次按下后会释放 Enter" />
+                        </StackPanel>
+                        <StackPanel Width="122" Margin="0,0,12,0">
+                            <TextBlock Text="购买后等待（秒）" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox x:Name="AutoPurchaseDelayBox" Text="0" Height="28" Margin="0,4,0,0"
+                                     VerticalContentAlignment="Center" Padding="6,0" ToolTip="0–60 秒；让购买确认与动画结束后再恢复重购" />
+                        </StackPanel>
+                        <StackPanel Width="122" Margin="0,0,12,0">
+                            <TextBlock Text="恢复后等待（秒）" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox x:Name="AutoRestoreDelayBox" Text="0" Height="28" Margin="0,4,0,0"
+                                     VerticalContentAlignment="Center" Padding="6,0" ToolTip="0–60 秒；等待车辆与购买入口加载后再按键" />
+                        </StackPanel>
+                        <StackPanel Width="122" Margin="0,0,12,0">
+                            <TextBlock Text="启动倒计时（秒）" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox x:Name="AutoStartDelayBox" Text="5" Height="28" Margin="0,4,0,0"
+                                     VerticalContentAlignment="Center" Padding="6,0" ToolTip="0–60 秒；倒计时结束前切回游戏并准备好购买位置" />
+                        </StackPanel>
+                        <StackPanel Width="142">
+                            <TextBlock Text="购买数量（0 = 无限）" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox x:Name="AutoMaxRoundsBox" Text="0" Height="28" Margin="0,4,0,0"
+                                     VerticalContentAlignment="Center" Padding="6,0" ToolTip="填写 N 就执行 N 轮购买并自动停止；单次模式固定执行 1 轮。实际入库以游戏为准。" />
+                        </StackPanel>
+                    </WrapPanel>
+                </StackPanel>
+                <TextBlock Grid.Row="2" x:Name="AutoStatusText" Margin="0,10,0,0" TextWrapping="Wrap" FontSize="11"
+                           Foreground="{StaticResource MutedBrush}"
+                           Text="选择下方目标车辆，站在游戏内购买位置后启动。F8 可随时停止；切出游戏会停止脚本。" />
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="3"
                     x:Name="WorkspaceTabs"
                     Background="Transparent"
                     BorderThickness="0">
@@ -554,7 +636,7 @@
             </TabItem>
         </TabControl>
 
-        <Border Grid.Row="3"
+        <Border Grid.Row="4"
                 Background="#E7E9ED"
                 BorderBrush="{StaticResource LineBrush}"
                 BorderThickness="0,1,0,0">
@@ -576,7 +658,7 @@
             </Grid>
         </Border>
 
-        <Grid Grid.RowSpan="4"
+        <Grid Grid.RowSpan="5"
               x:Name="BusyOverlay"
               Background="#B5202329"
               Visibility="Collapsed"

@@ -35,3 +35,9 @@ jobs:
 
       - name: Owner association regression tests
         run: dotnet run --project .\tests\FH6RareCarShop.OwnerTests\FH6RareCarShop.OwnerTests.csproj -c Release -p:TreatWarningsAsErrors=true
+
+      - name: Automatic purchase regression tests
+        run: dotnet run --project .\tests\FH6RareCarShop.AutomationTests\FH6RareCarShop.AutomationTests.csproj -c Release -p:TreatWarningsAsErrors=true
+
+      - name: Main window smoke tests
+        run: dotnet run --project .\tests\FH6RareCarShop.UiTests\FH6RareCarShop.UiTests.csproj -c Release -p:TreatWarningsAsErrors=true
