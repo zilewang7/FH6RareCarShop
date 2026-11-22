@@ -241,7 +241,8 @@ public static class CarCatalog
         new(TokyoNorthActivityId, 1, 3, 245, 4057, 1997, "日产", "Nissan",
             "Skyline GT-R V-Spec", "Skyline GT-R V-Spec", 0.85m, IsLimited: false,
             Description: "难寻车辆，平时通常只能通过嘉年华游戏列表获得。",
-            SearchAliases: "skyline 天际线 r33 gtr vspec 难寻 hard to find 游戏列表 playlist"),
+            SearchAliases: "skyline 天际线 r33 gtr vspec 难寻 hard to find 游戏列表 playlist",
+            IsHardToFind: true),
         new(TokyoNorthActivityId, 1, 4, 9, 2872, 2019, "现代", "Hyundai",
             "Veloster N", "Veloster N", 0.65m, IsLimited: false,
             Description: null, SearchAliases: "现代 飞思 改装"),
@@ -278,7 +279,8 @@ public static class CarCatalog
         new(TokyoNorthActivityId, 1, 15, 244, 4038, 1999, "丰田", "Toyota",
             "Altezza RS200 Z EDITION", "Altezza RS200 Z EDITION", 0.85m, IsLimited: false,
             Description: "难寻车辆，平时通常只能通过嘉年华游戏列表获得。",
-            SearchAliases: "altezza 阿尔特扎 雷克萨斯 is200 难寻 hard to find 游戏列表 playlist"),
+            SearchAliases: "altezza 阿尔特扎 雷克萨斯 is200 难寻 hard to find 游戏列表 playlist",
+            IsHardToFind: true),
     ];
 
     public static IReadOnlyList<CarOption> ForActivity(string activityId) =>

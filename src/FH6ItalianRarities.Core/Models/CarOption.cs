@@ -19,7 +19,8 @@ public sealed record CarOption(
     bool IsRecommended = false,
     string? ReferencePrice = null,
     string? Description = null,
-    string SearchAliases = "")
+    string SearchAliases = "",
+    bool IsHardToFind = false)
 {
     public string ChineseName => $"{ManufacturerZh} {ModelZh}";
 

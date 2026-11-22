@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "2.2.0"
+    [string]$Version = "2.2.1"
 )
 
 $ErrorActionPreference = "Stop"
@@ -46,16 +46,16 @@ if (Test-Path -LiteralPath $packageDirectory) {
 }
 New-Item -ItemType Directory -Path $packageDirectory | Out-Null
 
+# The package ships only the executable and README.txt (which carries the license text).
+# Hashes go to the release notes; activity records stay in the repository docs.
 $publishedExe = Join-Path $publishDirectory "FH6RareCarShop.exe"
 Copy-Item -LiteralPath $publishedExe -Destination $packageDirectory
 Copy-Item -LiteralPath (Join-Path $projectRoot "README.txt") -Destination $packageDirectory
-Copy-Item -LiteralPath (Join-Path $repositoryRoot "LICENSE") -Destination $packageDirectory
-Copy-Item -LiteralPath (Join-Path $repositoryRoot "docs\TOKYO_NORTH.md") -Destination $packageDirectory
-Copy-Item -LiteralPath (Join-Path $repositoryRoot "docs\SEVEN_ELEVEN.md") -Destination $packageDirectory
 
-$hash = Get-FileHash -LiteralPath (Join-Path $packageDirectory "FH6RareCarShop.exe") -Algorithm SHA256
-"SHA256  $($hash.Hash)  FH6RareCarShop.exe" |
-    Set-Content -LiteralPath (Join-Path $packageDirectory "SHA256.txt") -Encoding ascii
+$packagedFiles = @(Get-ChildItem -LiteralPath $packageDirectory -Force | ForEach-Object Name | Sort-Object)
+if (($packagedFiles -join "|") -ne "FH6RareCarShop.exe|README.txt") {
+    throw "Unexpected package contents: $($packagedFiles -join ', ')"
+}
 
 if (Test-Path -LiteralPath $zipPath) {
     Remove-Item -LiteralPath $zipPath -Force

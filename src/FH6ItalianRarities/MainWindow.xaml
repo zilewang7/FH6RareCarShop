@@ -64,6 +64,23 @@
                         </Border.Style>
                         <TextBlock Text="推荐" Foreground="{StaticResource RecommendBrush}" FontSize="10" FontWeight="SemiBold" />
                     </Border>
+                    <Border Padding="6,2" CornerRadius="3" Background="#EFE8FA">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsHardToFind}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <!-- The limited badge carries its own gap; the recommended one does not. -->
+                                    <DataTrigger Binding="{Binding IsRecommended}" Value="True">
+                                        <Setter Property="Margin" Value="0,3,0,0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="难寻" Foreground="{StaticResource HardToFindBrush}" FontSize="10" FontWeight="SemiBold" />
+                    </Border>
                 </StackPanel>
             </Grid>
         </DataTemplate>

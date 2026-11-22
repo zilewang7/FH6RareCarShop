@@ -28,6 +28,7 @@ internal static class GameLayout
     public static readonly ManagerVtableProfile[] ManagerVtableProfiles =
     [
         new("Xbox 3.483.970.0", 0x6697DE0, 0x6697F30),
+        new("Steam 6.483.970.0", 0x66AC1A0, 0x66AC2F0),
         new("Steam 6.461.691.0", 0x6B0EAE8, 0x6B0EC38),
         new("Xbox 3.461.691.0", 0x6AFBB78, 0x6AFBCC8),
         new("Xbox 3.440.853.0", 0x6AE3A10, 0x6AE3B60),
@@ -47,6 +48,15 @@ internal static class GameLayout
             0x6698640,
             0x7187858,
             0x71879C0),
+        new(
+            "Steam 6.483.970.0",
+            0x66AC1A0,
+            0x66AC2F0,
+            0x68E7038,
+            0x66AC8B0,
+            0x66ACA00,
+            0x719AAA8,
+            0x719AC10),
         new(
             "Steam 6.461.691.0",
             0x6B0EAE8,

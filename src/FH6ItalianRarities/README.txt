@@ -1,13 +1,15 @@
 FH6 奇珍商店工具
-版本 2.2.0  |  Windows x64  |  支持 Xbox 应用版与 Steam 版
+版本 2.2.1  |  Windows x64  |  支持 Xbox 应用版与 Steam 版
 
 本版支持城市生活系列新增的东京北改装车点位（1 个展位、15 辆），默认选择
 1997 Nissan Skyline GT-R V-Spec（R33）；1999 Toyota Altezza RS200 Z EDITION 与 R33
-是本系列新增的难寻车辆。Xbox 3.483.970.0 已在游戏内完成扫描、资格诊断、切换与
-完整重购事务实测，尚未在新构建上做真实购买闭环；Steam 6.483.970.0 尚未验证。
+是本系列新增的难寻车辆，列表中以紫色“难寻”标签标出。Xbox 3.483.970.0 与
+Steam 6.483.970.0 均已在游戏内完成扫描、资格诊断、切换与完整重购事务实测，
+尚未在新构建上做真实购买闭环。
 
-该构建的完整刷新会固定选中 R33，2.1.0 对 R33 恢复重购会连续失败；本版改为在刷新
-落到目标车或第一中转车时，用 setter 再切一次同池中转车后切回目标车。
+这两个构建的完整刷新都不再按工具指定的临时车池选车（Xbox 固定选中 R33，Steam
+停在第一中转车上）。工具会在刷新落到目标车或第一中转车时，用 setter 再切一次
+同池中转车，然后切回目标车。
 
 支持的活动
 ==========
@@ -66,8 +68,8 @@ AMG CLK GTR 为抽奖限定；Furai、MR2 SC 为嘉年华游戏列表回归稀�
 完整刷新依赖游戏线程；等待期间不要强制关闭工具。若退出游戏，所有进程内临时状态
 会随游戏进程一起清除。
 
-限定与推荐
-==========
+限定、推荐与难寻
+================
 英国抽奖限定：
 2019 Aston Martin DBS Superleggera
 1961 Jaguar E-type
@@ -82,6 +84,9 @@ AMG CLK GTR 为抽奖限定；Furai、MR2 SC 为嘉年华游戏列表回归稀�
 
 特别推荐：599XX Evolution、Sesto Elemento。
 
+难寻（列表中显示紫色“难寻”标签，也可搜索“难寻”）：东京北改装车的
+1997 Nissan Skyline GT-R V-Spec（R33）、1999 Toyota Altezza RS200 Z EDITION。
+
 兼容与安全检查
 ==============
 - 工具不修改存档文件，不抓取网络流量。
@@ -95,10 +100,9 @@ AMG CLK GTR 为抽奖限定；Furai、MR2 SC 为嘉年华游戏列表回归稀�
 
 已知验证范围
 ============
-- 东京北改装车已在 Xbox 3.483.970.0 完成单展位扫描、资格诊断、R33 / Altezza 切换与
-  完整重购事务（含刷新固定选中 R33 时的二次中转）；尚未做真实购买闭环。
-- Steam 6.483.970.0 尚未验证、未收录画像：普通切换预计需走数分钟的兼容回退定位，
-  恢复重购会因缺少 Steam 购买资格画像而拒绝执行。
+- 东京北改装车已在 Xbox 3.483.970.0 与 Steam 6.483.970.0 完成单展位扫描、资格诊断、
+  R33 / Altezza 切换与完整重购事务（含刷新未按临时车池选车时的二次中转）；尚未做
+  真实购买闭环。
 - 7-Eleven 联动已在 Xbox 3.461.691.0 完成单展位扫描、资格诊断、切换与完整重购事务，
   并以 MR2 SC 完成实机购买闭环：购买后车辆模型与入口一同消失，恢复后重新出现并可购买。
 - 7-Eleven 联动已在 Steam 6.461.691.0 完成车池、函数特征与购买资格只读验证；
@@ -128,3 +132,30 @@ AMG CLK GTR 为抽奖限定；Furai、MR2 SC 为嘉年华游戏列表回归稀�
 部分安全软件可能将其归类为修改器；请只从可信来源获取，不要盲目关闭系统防护。
 
 本工具为非官方社区工具。请自行遵守游戏服务条款，并自行承担使用风险。
+
+项目主页、各活动适配记录与每个版本的 SHA-256 校验值：
+https://github.com/zilewang7/FH6RareCarShop
+
+许可证
+======
+MIT License
+
+Copyright (c) 2026 FH6 Italian Rarities contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

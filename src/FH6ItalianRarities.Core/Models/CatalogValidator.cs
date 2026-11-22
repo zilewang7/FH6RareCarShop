@@ -4,6 +4,7 @@ public static class CatalogValidator
 {
     private static readonly HashSet<int> LimitedIds = [157, 160, 156, 161, 159, 158, 199, 200, 232];
     private static readonly HashSet<int> RecommendedIds = [157, 160];
+    private static readonly HashSet<int> HardToFindIds = [244, 245];
 
     public static void Validate()
     {
@@ -56,6 +57,9 @@ public static class CatalogValidator
         Require(cars.Where(car => car.IsRecommended).Select(car => car.AftermarketId).ToHashSet()
                 .SetEquals(RecommendedIds),
             "Recommended-car markers do not match 599XX Evolution and Sesto Elemento.");
+        Require(cars.Where(car => car.IsHardToFind).Select(car => car.AftermarketId).ToHashSet()
+                .SetEquals(HardToFindIds),
+            "Hard-to-find markers do not match the Tokyo North Altezza and R33.");
         Require(cars.All(car => car.DiscountMultiplier is > 0 and <= 1),
             "Every discount multiplier must be in the range (0, 1].");
     }

@@ -140,8 +140,8 @@ public static class OfflineSelfTest
 
     private static void ValidateTokyoNorthCatalog()
     {
-        // Resource whitelist / live-pool cross-check (Xbox 3.483.970.0). Furai (233) is not
-        // part of this pool; 244 and 245 are the City Life Hard to Find additions.
+        // Resource whitelist / live-pool cross-check (Xbox 3.483.970.0 and Steam 6.483.970.0).
+        // Furai (233) is not part of this pool; 244 and 245 are the City Life Hard to Find additions.
         int[] expectedIds = [1, 3, 245, 9, 4, 12, 15, 69, 21, 65, 64, 67, 70, 75, 244];
         int[] expectedModels = [427, 1273, 4057, 2872, 1655, 422, 1110, 3903, 3904, 3518, 353, 3773, 302, 1011, 4038];
         var cars = CarCatalog.ForSlot(CarCatalog.TokyoNorthActivityId, 1);
@@ -158,6 +158,8 @@ public static class OfflineSelfTest
             "Tokyo North price multipliers differ from the resource catalog.");
         Require(cars.All(car => !car.IsLimited && !car.IsRecommended),
             "Hard to Find playlist cars must not be labeled Wheelspin-exclusive.");
+        Require(cars.Where(car => car.IsHardToFind).Select(car => car.AftermarketId).SequenceEqual([245, 244]),
+            "Only the Altezza and R33 carry the hard-to-find tag.");
         Require(CarCatalog.DefaultActivity.Id == CarCatalog.TokyoNorthActivityId,
             "The latest activity must default to Tokyo North.");
         var manager = GameLayout.ManagerVtableProfiles.Single(p => p.Name == "Xbox 3.483.970.0");
@@ -171,6 +173,17 @@ public static class OfflineSelfTest
                 SaveStateVtableRva: 0x66984F0, SaveStateSecondVtableRva: 0x6698640,
                 EligibilityVtableRva: 0x7187858, EligibilitySecondVtableRva: 0x71879C0
             }, "Tokyo North Xbox eligibility link profile changed unexpectedly.");
+        var steamManager = GameLayout.ManagerVtableProfiles.Single(p => p.Name == "Steam 6.483.970.0");
+        Require(steamManager.VtableRva == 0x66AC1A0 && steamManager.SecondVtableRva == 0x66AC2F0,
+            "Tokyo North Steam manager profile changed unexpectedly.");
+        var steamOwner = GameLayout.SaveStateOwnerProfiles.Single(p => p.Name == "Steam 6.483.970.0");
+        Require(steamOwner is
+            {
+                ManagerVtableRva: 0x66AC1A0, ManagerSecondVtableRva: 0x66AC2F0,
+                OwnerVtableRva: 0x68E7038,
+                SaveStateVtableRva: 0x66AC8B0, SaveStateSecondVtableRva: 0x66ACA00,
+                EligibilityVtableRva: 0x719AAA8, EligibilitySecondVtableRva: 0x719AC10
+            }, "Tokyo North Steam eligibility link profile changed unexpectedly.");
     }
 
     private static void ValidatePackageVersion()

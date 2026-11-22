@@ -12,6 +12,7 @@
         <Color x:Key="WarningColor">#B36A10</Color>
         <Color x:Key="LimitedColor">#B6424E</Color>
         <Color x:Key="RecommendColor">#9A6500</Color>
+        <Color x:Key="HardToFindColor">#6E46A8</Color>
 
         <SolidColorBrush x:Key="InkBrush" Color="{StaticResource InkColor}" />
         <SolidColorBrush x:Key="MutedBrush" Color="{StaticResource MutedColor}" />
@@ -23,6 +24,7 @@
         <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
         <SolidColorBrush x:Key="LimitedBrush" Color="{StaticResource LimitedColor}" />
         <SolidColorBrush x:Key="RecommendBrush" Color="{StaticResource RecommendColor}" />
+        <SolidColorBrush x:Key="HardToFindBrush" Color="{StaticResource HardToFindColor}" />
 
         <Style TargetType="Window">
             <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI" />
