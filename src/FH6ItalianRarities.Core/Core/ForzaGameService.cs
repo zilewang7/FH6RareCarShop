@@ -309,74 +309,60 @@ public sealed class ForzaGameService : IDisposable
 
                     progress?.Report(new GameProgress(
                         "第二阶段：准备重建购买交互；请切回游戏并停留在活动场地"));
-                    const int maximumRefreshAttempts = 4;
-                    var refreshBase = liveManager;
-                    ManagerCandidate? refreshedManager = null;
-                    CarOption? actualRefreshCar = null;
-                    for (var attempt = 1; attempt <= maximumRefreshAttempts; attempt++)
-                    {
-                        poolOverride = new TemporarySingleCarPool(
-                            context.Handle,
-                            refreshBase,
-                            staging.Refresh.AftermarketId);
-                        AppLogger.Info(
-                            $"Temporary refresh pool armed (attempt {attempt}): " +
-                            poolOverride.DescribeLiveState());
-                        cancellationToken.ThrowIfCancellationRequested();
-                        refreshStarted = true;
-                        refreshFinished = false;
-                        var refreshExitCode = await RemoteGameCall.InvokeRefreshAsync(
-                            context.Handle,
-                            refresh.Address,
-                            refreshBase.Address,
-                            progress,
-                            cancellationToken).ConfigureAwait(false);
-                        refreshFinished = true;
-                        AppLogger.Info(
-                            $"Refresh attempt {attempt} returned 0x{refreshExitCode:X8}: " +
-                            poolOverride.DescribeLiveState());
-                        poolOverride.Restore();
-                        if (refreshExitCode != 0)
-                        {
-                            throw new InvalidOperationException(
-                                $"Remote refresh stub returned 0x{refreshExitCode:X8}.");
-                        }
-
-                        var selectedManager = WaitForManagerReady(
-                            context,
-                            refreshBase,
-                            TimeSpan.FromSeconds(3),
-                            CancellationToken.None);
-                        var selectedCar = CarCatalog.ByAftermarketId(selectedManager.CurrentId);
-                        if (selectedCar.AftermarketId != staging.First.AftermarketId &&
-                            selectedCar.AftermarketId != target.AftermarketId)
-                        {
-                            refreshedManager = selectedManager;
-                            actualRefreshCar = selectedCar;
-                            break;
-                        }
-
-                        AppLogger.Warn(
-                            $"Refresh attempt {attempt} selected unsuitable staging car " +
-                            $"{selectedCar.AftermarketId}; retrying.");
-                        if (attempt < maximumRefreshAttempts)
-                        {
-                            progress?.Report(new GameProgress(
-                                $"完整刷新未产生可用中转车辆，正在重试（{attempt + 1}/{maximumRefreshAttempts}）"));
-                            refreshBase = selectedManager;
-                        }
-                    }
-
-                    if (refreshedManager is null || actualRefreshCar is null)
-                    {
-                        throw new GameToolException(
-                            "游戏完整刷新连续返回了不适合作为中转的车辆，请重新执行恢复重购。",
-                            $"No distinct refresh car after {maximumRefreshAttempts} attempts.");
-                    }
+                    poolOverride = new TemporarySingleCarPool(
+                        context.Handle,
+                        liveManager,
+                        staging.Refresh.AftermarketId);
+                    AppLogger.Info("Temporary refresh pool armed: " + poolOverride.DescribeLiveState());
+                    cancellationToken.ThrowIfCancellationRequested();
+                    refreshStarted = true;
+                    var refreshExitCode = await RemoteGameCall.InvokeRefreshAsync(
+                        context.Handle,
+                        refresh.Address,
+                        liveManager.Address,
+                        progress,
+                        cancellationToken).ConfigureAwait(false);
+                    refreshFinished = true;
                     AppLogger.Info(
-                        $"Full refresh selected {actualRefreshCar.AftermarketId}/" +
-                        $"{actualRefreshCar.CarModelId} ({actualRefreshCar.OriginalName}); " +
+                        $"Refresh returned 0x{refreshExitCode:X8}: " + poolOverride.DescribeLiveState());
+                    poolOverride.Restore();
+                    if (refreshExitCode != 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"Remote refresh stub returned 0x{refreshExitCode:X8}.");
+                    }
+
+                    var refreshedManager = WaitForManagerReady(
+                        context,
+                        liveManager,
+                        TimeSpan.FromSeconds(3),
+                        CancellationToken.None);
+                    var refreshSelectedCar = CarCatalog.ByAftermarketId(refreshedManager.CurrentId);
+                    var actualRefreshCar = refreshSelectedCar;
+                    AppLogger.Info(
+                        $"Full refresh selected {refreshSelectedCar.AftermarketId}/" +
+                        $"{refreshSelectedCar.CarModelId} ({refreshSelectedCar.OriginalName}); " +
                         $"temporary pool requested {staging.Refresh.AftermarketId}.");
+                    if (refreshSelectedCar.AftermarketId == staging.First.AftermarketId ||
+                        refreshSelectedCar.AftermarketId == target.AftermarketId)
+                    {
+                        // Since the 3.483/6.483 builds the refresh ignores the temporary pool and can keep
+                        // landing on the same car. Hop with the setter so the final switch into the
+                        // target still starts from a different car of the same pool.
+                        progress?.Report(new GameProgress(
+                            $"完整刷新选中了 {refreshSelectedCar.ChineseName}，" +
+                            $"正在临时切换到 {staging.Refresh.ChineseName}"));
+                        AppLogger.Warn(
+                            $"Full refresh landed on {refreshSelectedCar.AftermarketId}; " +
+                            $"hopping to {staging.Refresh.AftermarketId} with the setter.");
+                        refreshedManager = SetCar(
+                            context,
+                            refreshedManager,
+                            setter.Address,
+                            staging.Refresh,
+                            CancellationToken.None);
+                        actualRefreshCar = staging.Refresh;
+                    }
                     var refreshedSaveStates = ResolveSaveStateWithRetry(
                         context,
                         refreshedManager,

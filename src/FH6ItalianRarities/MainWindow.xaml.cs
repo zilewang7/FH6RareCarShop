@@ -159,6 +159,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             (CarCatalog.BritishActivityId, 1) => 200,
             (CarCatalog.BritishActivityId, 2) => 199,
             (CarCatalog.SevenElevenActivityId, 1) => 233,
+            (CarCatalog.TokyoNorthActivityId, 1) => 245,
             _ => -1
         };
         var cars = CarCatalog.ForSlot(SelectedActivity.Id, slot);

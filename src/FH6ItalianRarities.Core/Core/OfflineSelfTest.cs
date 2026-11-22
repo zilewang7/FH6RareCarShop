@@ -23,6 +23,7 @@ public static class OfflineSelfTest
     {
         CatalogValidator.Validate();
         ValidateSevenElevenCatalog();
+        ValidateTokyoNorthCatalog();
         ValidatePackageVersion();
         ValidateLayout();
 
@@ -108,8 +109,6 @@ public static class OfflineSelfTest
             "7-Eleven price multipliers differ from the resource catalog.");
         Require(cars.Where(car => car.IsLimited).Select(car => car.AftermarketId).SequenceEqual([232]),
             "Playlist return cars must not be labeled Wheelspin-exclusive.");
-        Require(CarCatalog.DefaultActivity.Id == CarCatalog.SevenElevenActivityId,
-            "The latest activity must default to 7-Eleven.");
         var profile = GameLayout.ManagerVtableProfiles.Single(p => p.Name == "Steam 6.461.691.0");
         Require(profile.VtableRva == 0x6B0EAE8 && profile.SecondVtableRva == 0x6B0EC38,
             "7-Eleven Steam manager profile changed unexpectedly.");
@@ -137,6 +136,41 @@ public static class OfflineSelfTest
                     manager.VtableRva == owner.ManagerVtableRva &&
                     manager.SecondVtableRva == owner.ManagerSecondVtableRva) == 1),
             "Every owner profile must match exactly one manager profile.");
+    }
+
+    private static void ValidateTokyoNorthCatalog()
+    {
+        // Resource whitelist / live-pool cross-check (Xbox 3.483.970.0). Furai (233) is not
+        // part of this pool; 244 and 245 are the City Life Hard to Find additions.
+        int[] expectedIds = [1, 3, 245, 9, 4, 12, 15, 69, 21, 65, 64, 67, 70, 75, 244];
+        int[] expectedModels = [427, 1273, 4057, 2872, 1655, 422, 1110, 3903, 3904, 3518, 353, 3773, 302, 1011, 4038];
+        var cars = CarCatalog.ForSlot(CarCatalog.TokyoNorthActivityId, 1);
+        Require(cars.Select(car => car.AftermarketId).SequenceEqual(expectedIds) &&
+                cars.Select(car => car.CarModelId).SequenceEqual(expectedModels),
+            "Tokyo North inventory/model mapping differs from the verified pool.");
+        Require(cars.All(car => car.DiscountMultiplier == (car.AftermarketId switch
+            {
+                15 => .35m,
+                75 => .70m,
+                1 or 3 or 4 or 9 or 12 or 21 => .65m,
+                _ => .85m
+            })),
+            "Tokyo North price multipliers differ from the resource catalog.");
+        Require(cars.All(car => !car.IsLimited && !car.IsRecommended),
+            "Hard to Find playlist cars must not be labeled Wheelspin-exclusive.");
+        Require(CarCatalog.DefaultActivity.Id == CarCatalog.TokyoNorthActivityId,
+            "The latest activity must default to Tokyo North.");
+        var manager = GameLayout.ManagerVtableProfiles.Single(p => p.Name == "Xbox 3.483.970.0");
+        Require(manager.VtableRva == 0x6697DE0 && manager.SecondVtableRva == 0x6697F30,
+            "Tokyo North Xbox manager profile changed unexpectedly.");
+        var owner = GameLayout.SaveStateOwnerProfiles.Single(p => p.Name == "Xbox 3.483.970.0");
+        Require(owner is
+            {
+                ManagerVtableRva: 0x6697DE0, ManagerSecondVtableRva: 0x6697F30,
+                OwnerVtableRva: 0x68D42D8,
+                SaveStateVtableRva: 0x66984F0, SaveStateSecondVtableRva: 0x6698640,
+                EligibilityVtableRva: 0x7187858, EligibilitySecondVtableRva: 0x71879C0
+            }, "Tokyo North Xbox eligibility link profile changed unexpectedly.");
     }
 
     private static void ValidatePackageVersion()
@@ -180,6 +214,8 @@ public static class OfflineSelfTest
         RequirePlan(targetId: 171, currentId: 171, firstId: 161, refreshId: 172);
         RequirePlan(targetId: 214, currentId: 214, firstId: 218, refreshId: 201);
         RequirePlan(targetId: 211, currentId: 211, firstId: 220, refreshId: 203);
+        RequirePlan(targetId: 245, currentId: 67, firstId: 3, refreshId: 1);
+        RequirePlan(targetId: 1, currentId: 1, firstId: 245, refreshId: 3);
     }
 
     private static void RequirePlan(int targetId, int currentId, int firstId, int refreshId)

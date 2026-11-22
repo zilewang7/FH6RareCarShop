@@ -5,6 +5,7 @@ public static class CarCatalog
     public const string ItalianActivityId = "italian";
     public const string BritishActivityId = "british";
     public const string SevenElevenActivityId = "seven-eleven";
+    public const string TokyoNorthActivityId = "tokyo-north";
 
     private static readonly TimeSpan ChinaStandardTimeOffset = TimeSpan.FromHours(8);
 
@@ -33,6 +34,14 @@ public static class CarCatalog
             new DateTimeOffset(2026, 10, 8, 22, 30, 0, ChinaStandardTimeOffset),
             new DateTimeOffset(2026, 11, 5, 22, 30, 0, ChinaStandardTimeOffset),
             "南岸区 7-Eleven 店后展位",
+            1),
+        new(
+            TokyoNorthActivityId,
+            "东京北改装车（城市生活）",
+            "City Life / Tokyo City Aftermarket Cars",
+            new DateTimeOffset(2026, 11, 5, 22, 30, 0, ChinaStandardTimeOffset),
+            new DateTimeOffset(2026, 12, 3, 22, 30, 0, ChinaStandardTimeOffset),
+            "东京城北 Kado mart 旁汽车修理店展位",
             1)
     ];
 
@@ -220,6 +229,56 @@ public static class CarCatalog
         new(SevenElevenActivityId, 1, 14, 243, 637, 1967, "兰博基尼", "Lamborghini",
             "Miura P400", "Miura P400", 0.75m, IsLimited: false,
             Description: null, SearchAliases: "兰博基尼 miura 缪拉 p400"),
+
+        // City Life Tokyo North aftermarket - one 15-car pool, verified on Xbox 3.483.970.0.
+        // Runtime pool order; most entries are pre-modified aftermarket builds.
+        new(TokyoNorthActivityId, 1, 1, 1, 427, 2003, "本田", "Honda",
+            "S2000", "S2000", 0.65m, IsLimited: false,
+            Description: null, SearchAliases: "本田 s2k 改装"),
+        new(TokyoNorthActivityId, 1, 2, 3, 1273, 1997, "本田", "Honda",
+            "Civic Type R", "Civic Type R", 0.65m, IsLimited: false,
+            Description: null, SearchAliases: "本田 思域 ek9 改装"),
+        new(TokyoNorthActivityId, 1, 3, 245, 4057, 1997, "日产", "Nissan",
+            "Skyline GT-R V-Spec", "Skyline GT-R V-Spec", 0.85m, IsLimited: false,
+            Description: "难寻车辆，平时通常只能通过嘉年华游戏列表获得。",
+            SearchAliases: "skyline 天际线 r33 gtr vspec 难寻 hard to find 游戏列表 playlist"),
+        new(TokyoNorthActivityId, 1, 4, 9, 2872, 2019, "现代", "Hyundai",
+            "Veloster N", "Veloster N", 0.65m, IsLimited: false,
+            Description: null, SearchAliases: "现代 飞思 改装"),
+        new(TokyoNorthActivityId, 1, 5, 4, 1655, 2013, "斯巴鲁", "Subaru",
+            "BRZ", "BRZ", 0.65m, IsLimited: false,
+            Description: null, SearchAliases: "斯巴鲁 brz rocket bunny 改装"),
+        new(TokyoNorthActivityId, 1, 6, 12, 422, 2002, "讴歌", "Acura",
+            "RSX Type S", "RSX Type S", 0.65m, IsLimited: false,
+            Description: null, SearchAliases: "讴歌 rsx 改装"),
+        new(TokyoNorthActivityId, 1, 7, 15, 1110, 1994, "马自达", "Mazda",
+            "MX-5 Miata", "MX-5 Miata", 0.35m, IsLimited: false,
+            Description: null, SearchAliases: "马自达 mx5 miata na 改装"),
+        new(TokyoNorthActivityId, 1, 8, 69, 3903, 2023, "福特", "Ford",
+            "Fiesta ST", "Fiesta ST", 0.85m, IsLimited: false,
+            Description: null, SearchAliases: "福特 嘉年华 fiesta 改装"),
+        new(TokyoNorthActivityId, 1, 9, 21, 3904, 2022, "福特", "Ford",
+            "Focus ST", "Focus ST", 0.65m, IsLimited: false,
+            Description: null, SearchAliases: "福特 福克斯 focus 改装"),
+        new(TokyoNorthActivityId, 1, 10, 65, 3518, 2020, "宝马", "BMW",
+            "M8 Competition Coupé", "M8 Competition Coupé", 0.85m, IsLimited: false,
+            Description: null, SearchAliases: "宝马 m8 coupe 改装"),
+        new(TokyoNorthActivityId, 1, 11, 64, 353, 1992, "大众", "Volkswagen",
+            "Golf GTi 16v Mk2", "Golf GTi 16v Mk2", 0.85m, IsLimited: false,
+            Description: null, SearchAliases: "大众 高尔夫 golf gti mk2 改装"),
+        new(TokyoNorthActivityId, 1, 12, 67, 3773, 2023, "本田", "Honda",
+            "Civic Type R", "Civic Type R", 0.85m, IsLimited: false,
+            Description: null, SearchAliases: "本田 思域 fl5 改装"),
+        new(TokyoNorthActivityId, 1, 13, 70, 302, 2004, "本田", "Honda",
+            "Civic Type R", "Civic Type R", 0.85m, IsLimited: false,
+            Description: null, SearchAliases: "本田 思域 ep3 改装"),
+        new(TokyoNorthActivityId, 1, 14, 75, 1011, 2008, "宝马", "BMW",
+            "M3", "M3", 0.70m, IsLimited: false,
+            Description: null, SearchAliases: "宝马 m3 e92 改装"),
+        new(TokyoNorthActivityId, 1, 15, 244, 4038, 1999, "丰田", "Toyota",
+            "Altezza RS200 Z EDITION", "Altezza RS200 Z EDITION", 0.85m, IsLimited: false,
+            Description: "难寻车辆，平时通常只能通过嘉年华游戏列表获得。",
+            SearchAliases: "altezza 阿尔特扎 雷克萨斯 is200 难寻 hard to find 游戏列表 playlist"),
     ];
 
     public static IReadOnlyList<CarOption> ForActivity(string activityId) =>

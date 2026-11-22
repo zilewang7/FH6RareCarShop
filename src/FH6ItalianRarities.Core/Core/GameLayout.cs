@@ -27,6 +27,7 @@ internal static class GameLayout
 
     public static readonly ManagerVtableProfile[] ManagerVtableProfiles =
     [
+        new("Xbox 3.483.970.0", 0x6697DE0, 0x6697F30),
         new("Steam 6.461.691.0", 0x6B0EAE8, 0x6B0EC38),
         new("Xbox 3.461.691.0", 0x6AFBB78, 0x6AFBCC8),
         new("Xbox 3.440.853.0", 0x6AE3A10, 0x6AE3B60),
@@ -37,6 +38,15 @@ internal static class GameLayout
 
     public static readonly SaveStateOwnerProfile[] SaveStateOwnerProfiles =
     [
+        new(
+            "Xbox 3.483.970.0",
+            0x6697DE0,
+            0x6697F30,
+            0x68D42D8,
+            0x66984F0,
+            0x6698640,
+            0x7187858,
+            0x71879C0),
         new(
             "Steam 6.461.691.0",
             0x6B0EAE8,

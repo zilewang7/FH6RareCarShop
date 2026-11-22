@@ -8,7 +8,7 @@ public static class CatalogValidator
     public static void Validate()
     {
         var cars = CarCatalog.All;
-        Require(cars.Count == 78, $"Expected 78 catalog entries, found {cars.Count}.");
+        Require(cars.Count == 93, $"Expected 93 catalog entries, found {cars.Count}.");
         Require(cars.Select(car => car.AftermarketId).Distinct().Count() == cars.Count,
             "Aftermarket IDs must be unique.");
         // A returning model may have a different inventory entry and price in another activity.
@@ -46,6 +46,9 @@ public static class CatalogValidator
         Require(CarCatalog.GetActivity(CarCatalog.SevenElevenActivityId).SlotCount == 1 &&
                 CarCatalog.ForSlot(CarCatalog.SevenElevenActivityId, 1).Count == 14,
             "7-Eleven must contain one 14-car pool.");
+        Require(CarCatalog.GetActivity(CarCatalog.TokyoNorthActivityId).SlotCount == 1 &&
+                CarCatalog.ForSlot(CarCatalog.TokyoNorthActivityId, 1).Count == 15,
+            "Tokyo North aftermarket must contain one 15-car pool.");
 
         Require(cars.Where(car => car.IsLimited).Select(car => car.AftermarketId).ToHashSet()
                 .SetEquals(LimitedIds),

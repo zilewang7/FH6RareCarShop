@@ -7,7 +7,8 @@ using Microsoft.Win32.SafeHandles;
 
 // All mutations are to this harness's own allocation. The production resolver
 // receives a read/query-only handle to this process; no game process is opened.
-const int moduleSize = 0x7000000;
+// The fixture writes vtables at module + RVA, so it must cover every profile RVA.
+const int moduleSize = 0x8000000;
 var memory = Marshal.AllocHGlobal(moduleSize);
 try
 {
