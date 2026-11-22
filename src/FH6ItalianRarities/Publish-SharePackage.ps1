@@ -50,6 +50,7 @@ $publishedExe = Join-Path $publishDirectory "FH6RareCarShop.exe"
 Copy-Item -LiteralPath $publishedExe -Destination $packageDirectory
 Copy-Item -LiteralPath (Join-Path $projectRoot "README.txt") -Destination $packageDirectory
 Copy-Item -LiteralPath (Join-Path $repositoryRoot "LICENSE") -Destination $packageDirectory
+Copy-Item -LiteralPath (Join-Path $repositoryRoot "docs\TOKYO_NORTH.md") -Destination $packageDirectory
 Copy-Item -LiteralPath (Join-Path $repositoryRoot "docs\SEVEN_ELEVEN.md") -Destination $packageDirectory
 
 $hash = Get-FileHash -LiteralPath (Join-Path $packageDirectory "FH6RareCarShop.exe") -Algorithm SHA256
